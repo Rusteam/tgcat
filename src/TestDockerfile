@@ -1,0 +1,20 @@
+FROM debian:buster
+
+RUN apt update \
+    && apt install -y zip cmake gcc g++ libboost-all-dev build-essential libjsoncpp-dev uuid-dev protobuf-compiler libprotobuf-dev
+
+WORKDIR /app
+COPY tester/ ./tester/
+
+COPY submission.zip /app/tester
+
+WORKDIR /app/tester
+RUN unzip submission.zip
+
+WORKDIR build
+RUN cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build .
+RUN cmake --build .
+
+COPY run_cmd.sh ./
+RUN chmod 777 run_cmd.sh
+CMD ["./run_cmd.sh"]
