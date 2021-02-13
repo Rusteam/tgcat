@@ -16,3 +16,9 @@ docker run --rm --name tgcat-tester \
                -v $(pwd)/data:/app/tester/data \
                -v $(pwd)/models:/app/tester/models \
                tgcat:latest
+
+
+docker run --rm --name tgcat-tester \
+               -v $(pwd)/data:/app/tester/data \
+               -v $(pwd)/models:/app/tester/models \
+               tgcat:latest zip -r data/submission.zip libtgcat.so models/lang_detect_v10.ftz models/*.pt

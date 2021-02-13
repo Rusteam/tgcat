@@ -29,6 +29,7 @@ data/external/dc*.txt
 cmake-build-debug/
 libtgcat.so
 
+src/submission.zip
 data/
 models/
 

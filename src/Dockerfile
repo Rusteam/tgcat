@@ -2,6 +2,7 @@ FROM debian:buster
 
 RUN apt-get clean && apt-get update
 RUN apt-get install -y cmake gcc g++ libboost-all-dev build-essential libjsoncpp-dev uuid-dev protobuf-compiler libprotobuf-dev
+RUN apt-get install -y zip
 
 RUN mkdir app
 COPY ./inference /app/inference
