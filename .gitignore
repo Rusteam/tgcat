@@ -1,0 +1,35 @@
+.spyproject/
+.vector_cache/
+.idea/
+fastText/
+notebooks/.ipynb_checkpoints/
+**/__pycache__/
+src/train/*.session
+**/.DS_Store
+.env
+config/*.json
+
+## Virtual environments
+venv/*
+
+# Python
+__pycache__
+
+## IDEs
+.idea
+.DS_Store
+models/external/
+data/external/dc*.txt
+.idea/
+
+# Jupyter
+.ipynb_checkpoints
+
+# C++
+cmake-build-debug/
+libtgcat.so
+
+data/
+models/
+
+src/inference/libtorch/

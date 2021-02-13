@@ -1,0 +1,87 @@
+syntax = "proto3";
+package tg;
+
+import "enum.proto";
+
+message TServerConfig {
+    uint32 threads = 1;
+    uint32 max_connection_num = 2;
+    uint32 max_connection_num_per_ip = 3;
+    uint32 idle_connection_timeout = 4;
+    uint32 keepalive_requests_number = 5;
+    uint32 pipelining_requests_number = 6;
+
+    string db_path = 7;
+    bool db_fail_if_missing = 8;
+    uint32 db_max_open_files = 9;
+
+    bool skip_irrelevant_docs = 10;
+    uint32 clusterer_sleep = 11;
+
+    string annotator_config_path = 12;
+    string clusterer_config_path = 13;
+    string summarizer_config_path = 14;
+    string ranker_config_path = 15;
+}
+
+message TCategoryModelConfig{
+    ELanguage language = 1;
+    string path = 2;
+}
+
+message TEmbedderConfig {
+    EEmbedderType type = 1;
+    ELanguage language = 2;
+    EEmbeddingKey embedding_key = 3;
+    EEmbedderField embedder_field = 4;
+    EAggregationMode aggregation_mode = 5;
+    uint32 max_words = 6;
+    string model_path = 7;
+    string vector_model_path = 8;
+    string vocabulary_path = 9;
+}
+
+message TAnnotatorConfig {
+    string lang_detect = 1;
+    repeated TCategoryModelConfig category_models = 2;
+    repeated TEmbedderConfig embedders = 3;
+    uint32 min_text_length = 4;
+    bool parse_links = 5;
+    bool save_texts = 6;
+    bool compute_nasty = 7;
+    bool save_not_news = 8;
+}
+
+message TClusteringEmbeddingKeyWeight {
+    EEmbeddingKey embedding_key = 1;
+    float weight = 2;
+}
+
+message TClusteringConfig {
+    ELanguage language = 1;
+    float small_threshold = 2;
+    uint64 small_cluster_size = 3;
+    float medium_threshold = 4;
+    uint64 medium_cluster_size = 5;
+    float large_threshold = 6;
+    uint64 large_cluster_size = 7;
+    uint64 chunk_size = 8;
+    uint64 intersection_size = 9;
+    bool use_timestamp_moving = 10;
+    bool ban_same_hosts = 11;
+    repeated TClusteringEmbeddingKeyWeight embedding_keys_weights = 12;
+}
+
+message TClustererConfig {
+    repeated TClusteringConfig clusterings = 1;
+    float iter_timestamp_percentile = 2;
+}
+
+message TSummarizerConfig {
+    string hosts_rating = 1;
+    string alexa_rating = 2;
+}
+
+message TRankerConfig {
+    uint64 min_cluster_size = 1;
+}
