@@ -31,8 +31,8 @@ public:
             const std::string& nbRUPath,
             const std::string& nbENPath,
             size_t maxWords);
-    std::optional<TDbDocument> AnnotateLanguage(const TDocument& document) const;
-    at::Dict<std::string, double> AnnotateCategory(const TDocument& document) const;
+    std::optional<TDbDocument> AnnotateLanguage(TDocument& document) const;
+    at::Dict<std::string, double> AnnotateCategory(TDocument& document) const;
     std::vector<std::string> PreprocessText(const std::string& text, bool isRU) const;
 
 private:
