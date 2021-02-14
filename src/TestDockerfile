@@ -1,7 +1,9 @@
 FROM debian:buster
 
-RUN apt update \
-    && apt install -y zip cmake gcc g++ libboost-all-dev build-essential libjsoncpp-dev uuid-dev protobuf-compiler libprotobuf-dev
+RUN apt-get clean && apt-get update
+COPY deb_packages.txt .
+RUN apt-get install -y $(xargs -a deb_packages.txt)
+RUN apt-get install -y zip
 
 WORKDIR /app
 COPY tester/ ./tester/

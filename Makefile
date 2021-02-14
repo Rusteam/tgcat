@@ -5,3 +5,6 @@ build:
 test:
 	bash test.sh
 	python -m unittest tests/test*.py
+
+predict:
+	python -m src.train.predict
