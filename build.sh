@@ -10,11 +10,11 @@ then
   exit 1
 fi
 
-cp models/external/lid.176.bin models/lang_detect_v10.ftz
-cp models/trained/tgcat/*.pt models/
+cp resources/external/lid.176.bin resources/lid.176.bin
+cp resources/trained/tgcat/*.pt resources/
 docker run --rm --name tgcat-tester \
                -v $(pwd)/data:/app/tester/data \
-               -v $(pwd)/models:/app/tester/models \
+               -v $(pwd)/resources:/app/tester/resources \
                tgcat:latest
 
 

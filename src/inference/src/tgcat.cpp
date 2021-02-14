@@ -52,13 +52,13 @@ const char *TGCAT_CATEGORY_NAME[] = {
 };
 
 
-std::string modelPath("./models/lang_detect_v10.ftz");
-std::string vocabularyRUPath("./models/ru_tfidf.txt");
-std::string vocabularyENPath("./models/en_tfidf.txt");
-std::string nbRUPath("./models/ru_tgcat.pt");
-std::string nbENPath("./models/en_tgcat.pt");
+std::string modelPath("./resources/lid.176.bin");
+std::string vocabularyRUPath("./resources/ru_tfidf.txt");
+std::string vocabularyENPath("./resources/en_tfidf.txt");
+std::string nbRUPath("./resources/ru_tgcat.pt");
+std::string nbENPath("./resources/en_tgcat.pt");
 size_t maxWords = 10000;
-TAnnotator annotator = TAnnotator(modelPath, vocabularyRUPath, vocabularyENPath, nbRUPath, nbENPath, maxWords);
+TAnnotator annotator = TAnnotator(modelPath, nbRUPath, nbENPath, maxWords);
 
 int tgcat_init() {
     return 0;
@@ -69,7 +69,7 @@ int tgcat_detect_language(const struct TelegramChannelInfo *channel_info,
     TDocument document = TDocument();
     document.Text = channel_info->title;
     document.Text.append("\n");
-    document.Text.append(document.Description);
+    document.Text.append(channel_info->description);
     document.Text.append("\n");
 
     for (int i=0;i<channel_info->post_count; i++){
@@ -104,7 +104,7 @@ int tgcat_detect_category(const struct TelegramChannelInfo *channel_info,
     TDocument document = TDocument();
     document.Text = channel_info->title;
     document.Text.append("\n");
-    document.Text.append(document.Description);
+    document.Text.append(channel_info->description);
     document.Text.append("\n");
 
     for (int i=0;i<channel_info->post_count; i++){
