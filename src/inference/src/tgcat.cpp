@@ -58,7 +58,7 @@ std::string vocabularyENPath("./resources/en_tfidf.txt");
 std::string nbRUPath("./resources/ru_tgcat.pt");
 std::string nbENPath("./resources/en_tgcat.pt");
 size_t maxWords = 10000;
-TAnnotator annotator = TAnnotator(modelPath, vocabularyRUPath, vocabularyENPath, nbRUPath, nbENPath, maxWords);
+TAnnotator annotator = TAnnotator(modelPath, nbRUPath, nbENPath, maxWords);
 
 int tgcat_init() {
     return 0;

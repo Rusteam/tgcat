@@ -18,13 +18,9 @@
 
 TAnnotator::TAnnotator(
         const std::string& modelPath,
-        const std::string& vocabularyRUPath,
-        const std::string& vocabularyENPath,
         const std::string& nbRUPath,
         const std::string& nbENPath,
         size_t maxWords) :
-        RUEmbedder(vocabularyRUPath, maxWords),
-        ENEmbedder(vocabularyRUPath, maxWords),
         Tokenizer(onmt::Tokenizer::Mode::Conservative, onmt::Tokenizer::Flags::CaseFeature)
 {
     LanguageDetector.loadModel(modelPath);
@@ -74,10 +70,10 @@ std::vector<std::string> TAnnotator::PreprocessText(const std::string& text, boo
     return clean_tokens;
 }
 
-at::Dict<std::string, double> TAnnotator::AnnotateCategory(TDocument &document) const {
+torch::Dict<std::string, double> TAnnotator::AnnotateCategory(TDocument &document) const {
     std::optional<TDbDocument> dbDoc = AnnotateLanguage(document);
     if (!dbDoc->IsEnglish() and !dbDoc->IsRussian()){
-        at::Dict<std::string, double> newProba;
+        torch::Dict<std::string, double> newProba;
         newProba.insert("Art & Design", 0.0);
         return newProba;
     }
@@ -98,7 +94,7 @@ at::Dict<std::string, double> TAnnotator::AnnotateCategory(TDocument &document) 
     inputs.emplace_back(cleanTextList);
 
     // NB predict
-    at::IValue outputTensor;
+    torch::IValue outputTensor;
     if (dbDoc->IsEnglish()){
         outputTensor = ENNB.forward(inputs);
     }
@@ -106,7 +102,7 @@ at::Dict<std::string, double> TAnnotator::AnnotateCategory(TDocument &document) 
         outputTensor = RUNB.forward(inputs);
     }
     auto categoryProba = outputTensor.toList().get(0).toGenericDict();
-    at::Dict<std::string, double> newProba;
+    torch::Dict<std::string, double> newProba;
 
     auto  it = categoryProba.begin();
     for (it = categoryProba.begin(); it != categoryProba.end(); it++) {
