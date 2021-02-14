@@ -1,4 +1,4 @@
-./inference/
-./train/
-./Dockerfile
-./*.py
+inference/
+train/
+Dockerfile
+*.py

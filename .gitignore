@@ -32,5 +32,6 @@ libtgcat.so
 src/submission.zip
 data/
 models/
+resources/
 
 src/inference/libtorch/

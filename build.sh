@@ -10,15 +10,15 @@ then
   exit 1
 fi
 
-cp resources/external/lid.176.bin resources/lid.176.bin
-cp resources/trained/tgcat/*.pt resources/
-docker run --rm --name tgcat-tester \
-               -v $(pwd)/data:/app/tester/data \
-               -v $(pwd)/resources:/app/tester/resources \
-               tgcat:latest
+cp models/external/lid.176.bin resources/
+cp models/trained/tgcat/*.pt resources/
+cp src/inference/libtorch/lib/libtorch.so src/inference/libtorch/lib/libgomp-75eea7e8.so.1 src/inference/libtorch/lib/libc10.so resources/
+#docker run --rm --name tgcat-tester \
+#               -v $(pwd)/data:/app/tester/data \
+#               -v $(pwd)/resources:/app/tester/resources \
+#               tgcat:latest
 
 
 docker run --rm --name tgcat-tester \
-               -v $(pwd)/data:/app/tester/data \
-               -v $(pwd)/models:/app/tester/models \
-               tgcat:latest zip -r data/submission.zip libtgcat.so models/lang_detect_v10.ftz models/*.pt
+               -v $(pwd)/resources:/app/inference/build/resources \
+               tgcat:latest zip -r resources/submission.zip libtgcat.so resources/
