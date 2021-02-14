@@ -62,7 +62,7 @@ else()
     endif()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${SOURCES})
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
 include(GNUInstallDirs)
 include(GenerateExportHeader)
 string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWER)
