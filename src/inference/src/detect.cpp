@@ -67,8 +67,8 @@ bool TooManyUnknownSymbols(const TDocument& doc) {
 }
 
 tg::ELanguage DetectLanguage(const fasttext::FastText& model, const TDocument& document) {
-    std::string sample(document.Title + " " + document.Description + " " + document.Text.substr(0, 100));
-    auto pair = RunFasttextClf(model, sample, 0.4);
+    std::string sample(document.Text);
+    auto pair = RunFasttextClf(model, sample, 0.1);
     if (!pair) {
         return tg::LN_UNDEFINED;
     }

@@ -18,13 +18,9 @@
 
 TAnnotator::TAnnotator(
         const std::string& modelPath,
-        const std::string& vocabularyRUPath,
-        const std::string& vocabularyENPath,
         const std::string& nbRUPath,
         const std::string& nbENPath,
         size_t maxWords) :
-        RUEmbedder(vocabularyRUPath, maxWords),
-        ENEmbedder(vocabularyRUPath, maxWords),
         Tokenizer(onmt::Tokenizer::Mode::Conservative, onmt::Tokenizer::Flags::CaseFeature)
 {
     LanguageDetector.loadModel(modelPath);
@@ -33,8 +29,12 @@ TAnnotator::TAnnotator(
 }
 
 
-std::optional<TDbDocument> TAnnotator::AnnotateLanguage(const TDocument& document) const {
+std::optional<TDbDocument> TAnnotator::AnnotateLanguage(TDocument& document) const {
     TDbDocument dbDoc;
+    std::regex urlRe("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+");
+    std::string processed_text = std::regex_replace(document.Text, urlRe, " ");
+    document.Text = processed_text;
+
     dbDoc.Language = DetectLanguage(LanguageDetector, document);
     return dbDoc;
 }
@@ -70,10 +70,10 @@ std::vector<std::string> TAnnotator::PreprocessText(const std::string& text, boo
     return clean_tokens;
 }
 
-at::Dict<std::string, double> TAnnotator::AnnotateCategory(const TDocument &document) const {
+torch::Dict<std::string, double> TAnnotator::AnnotateCategory(TDocument &document) const {
     std::optional<TDbDocument> dbDoc = AnnotateLanguage(document);
     if (!dbDoc->IsEnglish() and !dbDoc->IsRussian()){
-        at::Dict<std::string, double> newProba;
+        torch::Dict<std::string, double> newProba;
         newProba.insert("Art & Design", 0.0);
         return newProba;
     }
@@ -94,7 +94,7 @@ at::Dict<std::string, double> TAnnotator::AnnotateCategory(const TDocument &docu
     inputs.emplace_back(cleanTextList);
 
     // NB predict
-    at::IValue outputTensor;
+    torch::IValue outputTensor;
     if (dbDoc->IsEnglish()){
         outputTensor = ENNB.forward(inputs);
     }
@@ -102,11 +102,14 @@ at::Dict<std::string, double> TAnnotator::AnnotateCategory(const TDocument &docu
         outputTensor = RUNB.forward(inputs);
     }
     auto categoryProba = outputTensor.toList().get(0).toGenericDict();
-    at::Dict<std::string, double> newProba;
+    torch::Dict<std::string, double> newProba;
 
     auto  it = categoryProba.begin();
     for (it = categoryProba.begin(); it != categoryProba.end(); it++) {
-        newProba.insert(it->key().toStringRef(), it->value().toDouble());
+        // Round to 2 decimals after point
+        double proba = it->value().toDouble();
+        proba = std::floor((proba * 100) + .5) / 100;
+        newProba.insert(it->key().toStringRef(), proba);
     }
     return newProba;
 }

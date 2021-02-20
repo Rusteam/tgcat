@@ -5,23 +5,25 @@ project(tgcat)
 add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
-set(CMAKE_MACOSX_RPATH 1)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
+SET (CMAKE_SHARED_LINKER_FLAGS
+        "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath,'$ORIGIN/resources'" )
 set(TGNEWS_CXX_FLAGS "-pthread;-Wall;-Wextra;-Wno-sign-compare;-fno-omit-frame-pointer;-fPIC")
 set(TGNEWS_CXX_DEBUG_FLAGS "-g;-O2;-fsanitize=address")
 set(TGNEWS_LNK_DEBUG_FLAGS "-fsanitize=address")
 set(TGNEWS_CXX_RELEASE_FLAGS "-funroll-loops;-Ofast;-march=x86-64;-mtune=generic;-msse3;-mssse3;-msse4;-msse4.1;-msse4.2")
 
 set(BUILD_TESTING 0)
-add_subdirectory(thirdparty/fasttext EXCLUDE_FROM_ALL)
-add_subdirectory(thirdparty/eigen EXCLUDE_FROM_ALL)
+add_subdirectory(thirdparty/fasttext)
+add_subdirectory(thirdparty/eigen)
 
 set(LIB_ONLY True)
-add_subdirectory(thirdparty/onmt EXCLUDE_FROM_ALL)
+add_subdirectory(thirdparty/onmt)
 unset(LIB_ONLY)
 
 unset(BUILD_TESTING)
@@ -40,8 +42,6 @@ set(SOURCE_FILES
         src/detect.cpp
         src/document.cpp
         src/db_document.cpp
-        src/embedders/tfidf_embedder.cpp
-        src/embedders/token_indexer.cpp
         src/json.cpp
         src/json-builder.cpp
         src/nasty.cpp
@@ -57,13 +57,14 @@ set(LIB_LIST
         ${Boost_LIBRARIES}
         ${Protobuf_LIBRARIES}
         ${TORCH_LIBRARIES}
-        fasttext-shared
+        fasttext-static
         OpenNMTTokenizer
         eigen
         )
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")
-target_include_directories(fasttext-shared SYSTEM PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/fasttext/src")
+
+target_include_directories(fasttext-static SYSTEM PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/fasttext/src")
 target_include_directories(OpenNMTTokenizer SYSTEM PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/onmt/include")
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})

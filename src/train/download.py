@@ -53,8 +53,8 @@ async def download_channel_messages(client, channel_usernames):
             messages = await client.get_messages(username, limit=CHANNEL_MESSAGE_LIMIT)
             messages = [(username, msg.id, msg.date, msg.message,) for msg in messages]
             posts.extend(messages)
-        except errors.rpcerrorlist.UsernameNotOccupiedError as e:
-            print(e)
+        except Exception as e:
+            print(username, e)
     posts = pd.DataFrame(posts, columns=['channel', 'idx', 'date','message'])
     print(f"Downloaded {len(posts)} posts with limit {CHANNEL_MESSAGE_LIMIT} interval")
     return posts
@@ -67,8 +67,8 @@ async def extract_channel_meta(client, channel_usernames):
         try:
             chan = await client(functions.channels.GetFullChannelRequest(username))
             meta.append((username, chan.chats[0].title, chan.full_chat.about))
-        except errors.rpcerrorlist.UsernameNotOccupiedError as e:
-            print(e)
+        except Exception as e:
+            print(username, e)
     print(f"Extracted {len(meta)} meta-data for channels")
     meta = pd.DataFrame(meta, columns=['username', 'title','about'])
     return meta
@@ -110,14 +110,14 @@ async def download_posts():
     # download message from channels
     # channel_entities = await get_channel_entities(tg_client, channel_names)
     meta = await extract_channel_meta(tg_client, channel_names)
-    messages = await download_channel_messages(tg_client, channel_names,)
-    data = format_text_data(messages, target_channels)
+    # messages = await download_channel_messages(tg_client, channel_names,)
+    # data = format_text_data(messages, target_channels)
     await tg_client.disconnect()
-    return data, meta
+    return "data", meta
 
 
 if __name__ == '__main__':
     with tg_client:
         posts,meta = tg_client.loop.run_until_complete(download_posts())
-    posts.to_csv(POSTS, index=False)
+    # posts.to_csv(POSTS, index=False)
     meta.to_csv(META, index=False)
