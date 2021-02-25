@@ -17,3 +17,4 @@ tqdm==4.56.0
 beautifulsoup4==4.9.3
 #python-dotenv==0.15.0
 PyYAML==5.4.1
+pybind11>=2.2

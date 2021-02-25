@@ -1,6 +1,5 @@
 import re
 import pyonmttok
-from src.train.nlp_utils import load_lemmatizers, get_tokens, select_lemmas
 
 
 def process_topics(topics):
@@ -64,22 +63,3 @@ def tokenize_text(text):
     tokens,_ = tokenizer.tokenize(text)
     tokens = process_tokens(tokens)
     return tokens
-
-
-POS = {
-    "en": ['NOUN', 'PROPN', 'ADJ', 'VERB'],
-    "ru": ['A', 'S',]
-}
-
-load_lemmatizers()
-
-
-def lang_lemmatizer(language):
-    def lemmatize_text(text):
-        """ get lemmas and POS tags, select target POS lemmas and filter trash """
-        text = preprocess_text(text)
-        tokens = get_tokens(text, language)
-        lemmas = select_lemmas(tokens, POS[language])
-        lemmas = process_tokens(lemmas)
-        return lemmas
-    return lemmatize_text

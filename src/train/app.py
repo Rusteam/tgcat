@@ -244,6 +244,14 @@ def get_channel_details(username):
     return channel_details
 
 
+def limit_post(post_message, max_len=300):
+    """ if post len too long, then cut it"""
+    if len(post_message) < max_len:
+        return post_message
+    else:
+        return post_message[:max_len] + '...'
+
+
 @st.cache
 def create_js_swiper(texts):
     """ create vertical SwiperJS to be rendered """
@@ -258,7 +266,13 @@ def create_js_swiper(texts):
                   height: 100%;
                 }
             
-   
+                 body {
+                  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+                  font-size: 14px;
+                  color: #000;
+                  margin: 0;
+                  padding: 0;
+                }
             
                 .swiper-container {
                   width: 100%;
@@ -293,7 +307,7 @@ def create_js_swiper(texts):
             <div class="swiper-container">
                 <div class="swiper-wrapper">
         """,
-        "\n".join([f'<div class="swiper-slide">{html.escape(t)}</div>' for t in texts]),
+        "\n".join([f'<div class="swiper-slide">{html.escape(limit_post(t))}</div>' for t in texts]),
         """
                 </div>
                 <div class="swiper-pagination"></div>
@@ -380,7 +394,7 @@ def main():
         st.text(TEXTS['recent_posts'][lang])
         if len(channel_details['recent_posts']):
             swiper = create_js_swiper(channel_details['recent_posts'])
-            components.html(swiper, height=400)
+            components.html(swiper, height=200)
         else:
             st.warning(ERRORS['no_posts'][lang])
 

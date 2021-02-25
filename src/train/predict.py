@@ -9,7 +9,7 @@ from tqdm import tqdm
 import fasttext
 import re
 # custom
-from src.train.text_utils import tokenize_text, lang_lemmatizer, preprocess_text
+from src.train.text_utils import tokenize_text, preprocess_text
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
