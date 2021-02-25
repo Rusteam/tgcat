@@ -5,7 +5,7 @@ numpy==1.20.0
 streamlit==0.76.0
 pandas==1.2.1
 requests==2.25.1
-torch==1.7.1+cpu
+torch-1.7.1+cpu-cp37-cp37m-linux_x86_64.whl
 #pymystem3==0.2.0
 #Telethon==1.19.1
 pyonmttok==1.23.0
