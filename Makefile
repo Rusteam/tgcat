@@ -8,6 +8,3 @@ test:
 
 predict:
 	python -m src.train.predict
-
-web:
-	python -m streamlit run src/train/app.py

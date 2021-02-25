@@ -1,23 +1,25 @@
 """
 build a streamlit app to make predictions of user-provided links
 """
-
-import streamlit as st
-import pandas as pd
-import json
-import random
-import torch.jit
 import re
-import asyncio
-from telethon import functions, tl, TelegramClient
+import requests
+from bs4 import BeautifulSoup
+import random
+from urllib.parse import urljoin
+import streamlit as st
+import streamlit.components.v1 as components
+import pandas as pd
+import torch.jit
+from pyonmttok._ext import Tokenizer
+import html
+import altair as alt
 # custom
 from src.train.predict import TGCAT_FILES, predict_language, predict_topics
-from src.train.download import SESSION_FILE, envs as tg_env
 
-# TODO configure how many top topics to see and how many recent posts
-# TODO add about us
-# TODO use test data as a reference
-# TODO handle session keys for multi-threaded
+
+# TODO localize topic names
+# TODO get channel counters
+
 
 LANGS = list(TGCAT_FILES.keys())
 TEXTS = {
@@ -82,8 +84,8 @@ TEXTS = {
         "ru": "описание"
     },
     "recent_posts": {
-        "en": "recent posts",
-        "ru": "последние посты"
+        "en": "Recent posts",
+        "ru": "Последние посты"
     },
     "more_posts": {
         'en': "more posts",
@@ -105,6 +107,44 @@ TEXTS = {
         "en": "Running the model on downloaded data",
         "ru": "Прогоняем загруженные данные через модель"
     },
+    "success": {
+        "en": "Finished querying data and making predictions!",
+        "ru": "Загрузка данных и определение тематики завершены"
+    },
+    "about_title": {
+        "en": "About us",
+        "ru": "Немного о нас"
+    },
+    "about": {
+        "en": [
+            """
+            We have developed these algorithms as part of 
+            [Telegram data clustering contest](https://contest.com/docs/dc2021-r1).
+            
+            This time, however, we have decided against just archiving our code and models somewhere on GitHub
+            and let people use these machine learning models.
+            """,
+            """
+            **Out team:**
+            - [Rustem Galileo, applied data scientist](https://rusteam.github.io/)
+            - [Almaz Melnikov, machine learning engineer](https://www.linkedin.com/in/almazmelnikov/)
+            """
+        ],
+        "ru": [
+            """
+            Алгоритмы разработаны в рамках 
+            [конкурса по кластеризации данных от Телеграм](https://contest.com/docs/dc2021-r1/ru).
+            
+            Однако на этот раз мы решили не архивировать наш код и построенные модели где-нибудь на гитхабе,
+            а дать возможность миру пользоваться нашей разработкой.
+            """,
+            """
+            **Наша команда:**
+            - [Рустем Галилео, дата саентист](https://rusteam.github.io/)
+            - [Алмаз Мельников, инженер-исследователь](https://www.linkedin.com/in/almazmelnikov/)
+            """
+        ],
+    }
 }
 ERRORS = {
     "user_input": {
@@ -118,42 +158,48 @@ ERRORS = {
     "channel_invalid": {
         "en": "{username} is not a valid public channel",
         "ru": "не похоже, что {username} является открытым каналом"
+    },
+    "nothing_selected": {
+        "en": "Select topics of interest to see similar channels",
+        "ru": "Выберите интересующие вас темы, чтобы отобразить схожие каналы"
+    },
+    "no_posts": {
+        'en': "Unable to fetch messages",
+        "ru": "Отсутствует доступ к сообщениям из канала"
     }
 }
+REF_FILES = [
+    'data/processed/dc0212-input_reference.json',
+    "data/processed/dc0206-input_reference.json",
+]
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246",
+    "Mozilla/5.0 (X11; CrOS x86_64 8172.45.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.64 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/601.3.9 (KHTML, like Gecko) Version/9.0.2 Safari/601.3.9",
+    "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1"
+]
 
 
-@st.cache()
+
+@st.cache(suppress_st_warning=True)
 def load_channels():
     # load channels with topics
-    data = pd.read_csv('./data/external/telegram_channels.csv')
-    data['topics'] = data['topic [Primary]'].apply(lambda x: x.split(','))
-    data['username'] = data['link'].apply(lambda x: x.split('/')[-1])
-    data['lang_code'] = data['language'].apply(lambda x: x.lower()[:2])
-    # load titles and descriptions
-    meta = pd.read_csv('./data/raw/meta.csv')
-    meta.rename({'about': 'description'}, axis=1, inplace=True)
-    data = data.merge(meta, how='inner', on='username')
-    return data[['link', 'title', 'description', 'topics', 'lang_code']]
+    data = pd.concat([pd.read_json(f) for f in REF_FILES])
+    data['topics'] = data['category'].apply(lambda x: list(x.keys()))
+    return data
 
 
 @st.cache()
 def filter_channels(selected_topics, lang):
     is_match = channels['topics'].apply(lambda x: len(set(selected_topics).intersection(x)) > 0)
     is_lang = channels['lang_code'] == lang
-    return channels.loc[is_match & is_lang].reset_index(drop=True)
+    return channels.copy().loc[is_match & is_lang].reset_index(drop=True)
 
 
-@st.cache()
-def load_random_channels():
-    """ load labelling tasks to use them as placeholder """
-    with open("data/processed/labelling_tasks_sample.json") as f:
-        data = json.load(f)
-    return data
-
-
-# @st.cache(hash_funcs={
-#     torch.jit._script.RecursiveScriptModule: lambda x: x,
-# })
+@st.cache(hash_funcs={
+    torch.jit._script.RecursiveScriptModule: id,
+    Tokenizer: id,
+})
 def get_channel_topics(channel_details):
     """ get language and topic predictions on change of channel details """
     channel_lang = predict_language(channel_details)
@@ -161,20 +207,8 @@ def get_channel_topics(channel_details):
         predictions = predict_topics(channel_details, channel_lang)
     else:
         predictions = {}
-    predictions = pd.DataFrame(predictions, index=[0])
+    # predictions = pd.DataFrame(predictions, index=[0])
     return channel_lang, predictions
-
-
-# @st.cache(hash_funcs={asyncio.coroutine: lambda x: x})
-async def create_tg_connection():
-    # loop = asyncio.new_event_loop()
-    # asyncio.set_event_loop(loop)
-    tg_client = TelegramClient(SESSION_FILE, tg_env['TELEGRAM_APP_ID'], tg_env['TELEGRAM_APP_HASH'])
-    async with tg_client:
-        me = await tg_client.get_me()
-    print(f'Logged in as {me.username}')
-    await tg_client.start()
-    return tg_client
 
 
 def extract_username(username):
@@ -183,36 +217,124 @@ def extract_username(username):
     return None if match is None else match.group(2)
 
 
-async def get_channel_details(channel):
-    # async with tg_client:
-    tg_client = TelegramClient(SESSION_FILE, tg_env['TELEGRAM_APP_ID'], tg_env['TELEGRAM_APP_HASH'])
-    channel_details = {'title': "", 'description': "", "recent_posts": []}
-    async with tg_client:
-        ent = await tg_client.get_entity(channel)
-        assert isinstance(ent, tl.types.Channel)
-        meta = await tg_client(functions.channels.GetFullChannelRequest(channel))
-        posts = await tg_client.get_messages(channel, limit=10)
-    channel_details.update({
-        'title': meta.chats[0].title,
-        'description': meta.full_chat.about
-    })
-    if len(posts) > 0:
-        channel_details.update({'recent_posts': [p.message for p in posts if p.message is not None]})
+@st.cache()
+def get_channel_details(username):
+    """ get channel title, description and recent posts"""
+    # make a request
+    username = username.split('/')[-1]
+    url = urljoin('https://t.me/s/', username)
+    resp = requests.get(url, headers={"User-Agent": random.choice(USER_AGENTS)})
+    resp.raise_for_status()
+    # parse html
+    page = BeautifulSoup(resp.content.decode(), 'html.parser')
+    channel_details = dict(
+        title = "",
+        description = "",
+        recent_posts = [],
+    )
+    title_div = page.find('meta', property='og:title')
+    if title_div is not None:
+        channel_details['title'] = title_div.get('content').strip()
+    description_div = page.find('meta', property='og:description')
+    if description_div is not None:
+        channel_details['description'] = description_div.get('content').replace('\t', '\n').strip()
+    post_divs = page.find_all('div', "tgme_widget_message_wrap")
+    post_divs = list(map(lambda x: x.findChild('div', 'tgme_widget_message_text'), post_divs))
+    channel_details['recent_posts'] = [p.get_text('\n', strip=True) for p in post_divs if p is not None]
     return channel_details
 
 
+@st.cache
+def create_js_swiper(texts):
+    """ create vertical SwiperJS to be rendered """
+    dom = '\n'.join([
+        """
+        <head>
+            <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
+            <style>
+                html,
+                body {
+                  position: relative;
+                  height: 100%;
+                }
+            
+   
+            
+                .swiper-container {
+                  width: 100%;
+                  height: 100%;
+                }
+            
+                .swiper-slide {
+                  width: 95%; 
+                  text-align: center;
+                  font-size: 1rem;
+                  font-weight: 400;
+                  font-family: IBM Plex Sans, sans-serif;
+                  background: #fff;
+            
+                  /* Center slide text vertically */
+                  display: -webkit-box;
+                  display: -ms-flexbox;
+                  display: -webkit-flex;
+                  display: flex;
+                  -webkit-box-pack: center;
+                  -ms-flex-pack: center;
+                  -webkit-justify-content: center;
+                  justify-content: center;
+                  -webkit-box-align: center;
+                  -ms-flex-align: center;
+                  -webkit-align-items: center;
+                  align-items: center;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="swiper-container">
+                <div class="swiper-wrapper">
+        """,
+        "\n".join([f'<div class="swiper-slide">{html.escape(t)}</div>' for t in texts]),
+        """
+                </div>
+                <div class="swiper-pagination"></div>
+            </div>
+            <!-- Swiper JS -->
+            <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+            <!-- Init swiper -->
+            <script>
+            var swiper = new Swiper('.swiper-container', {
+              direction: 'vertical',
+              pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+              },
+            });
+            </script>
+        </body>
+        """
+        ])
+    return dom
+
+def create_barplot(predictions):
+    data = pd.DataFrame([{'topic': k, 'weight': v} for k,v in predictions.items()], )
+    chart = alt.Chart(data).mark_bar().encode(x='weight', y='topic', color='topic')
+    return chart
+
+
 channels = load_channels()
-random_channels = load_random_channels()
-# loop = asyncio.new_event_loop()
-# asyncio.set_event_loop(loop)
-# tg_client = asyncio.run(create_tg_connection(), debug=True)
 
 
 def main():
+    """ create a page layout """
     # select language
     _,header_right = st.beta_columns((9,1))
     with header_right:
         lang = st.selectbox("", options=LANGS,)
+
+    # about
+    st.sidebar.title(TEXTS['about_title'][lang])
+    for txt in TEXTS['about'][lang]:
+        st.sidebar.markdown(txt)
 
     # intro
     st.title(TEXTS['title'][lang])
@@ -222,7 +344,6 @@ def main():
     st.markdown("---")
 
     # channel input and predictions
-    # st.header(TEXTS['main_header'][lang])
     st.subheader(TEXTS['input_header'][lang])
     username = st.text_input(TEXTS['input_text'][lang],)
     username = extract_username(username)
@@ -234,15 +355,19 @@ def main():
     # get predictions
     with st.spinner(TEXTS['spinner_channel'][lang]):
         try:
-            channel_details = asyncio.run(get_channel_details(username))
+            # channel_details = asyncio.run(get_channel_details(username), debug=True)
+            channel_details = get_channel_details(username)
         except Exception as e:
+            print(e)
             st.error(ERRORS['channel_invalid'][lang].format(username=username))
             return
     with st.spinner(TEXTS['spinner_predictions'][lang]):
         channel_lang, predictions = get_channel_topics(channel_details)
-    if channel_lang not in LANGS:
-        st.error(ERRORS['lang_code'][lang])
-        return
+        if channel_lang not in LANGS:
+            st.error(ERRORS['lang_code'][lang])
+            return
+        else:
+            st.success(TEXTS['success'][lang])
 
     # Output
     st.subheader(TEXTS['output_header'][lang])
@@ -251,21 +376,29 @@ def main():
         st.text(TEXTS['channel_subheader'][lang])
         st.write(f"**{TEXTS['channel_title'][lang]}:** {channel_details['title']}")
         st.write(f"**{TEXTS['channel_description'][lang]}:** {channel_details['description']}")
-        with st.beta_expander(TEXTS['recent_posts'][lang]):
-            for post in channel_details['recent_posts']:
-                st.text("- " + post)
-                st.text('\n')
     with main_right:
-        st.text(TEXTS['predictions_subheader'][lang])
-        st.bar_chart(predictions, use_container_width=False)
+        st.text(TEXTS['recent_posts'][lang])
+        if len(channel_details['recent_posts']):
+            swiper = create_js_swiper(channel_details['recent_posts'])
+            components.html(swiper, height=400)
+        else:
+            st.warning(ERRORS['no_posts'][lang])
+
+    st.text('\n')
+    st.text(TEXTS['predictions_subheader'][lang])
+
+    barplot = create_barplot(predictions)
+    st.altair_chart(barplot, use_container_width=True)
 
     # More channels with the same topic
     st.markdown('---')
     st.subheader(TEXTS['similar_channels'][lang])
-    more_topics = st.multiselect(TEXTS['select_topics'][lang], predictions.columns.values,)
+    more_topics = st.multiselect(TEXTS['select_topics'][lang], list(predictions.keys()),)
     similar_channels = filter_channels(more_topics, channel_lang)
     if len(similar_channels) > 0:
-        st.table(similar_channels[['link','title','description']])
+        st.table(similar_channels[['title','description','category']].sample(min(10, len(similar_channels))).reset_index(drop=True))
+    else:
+        st.warning(ERRORS['nothing_selected'][lang])
 
 
 if __name__ == '__main__':

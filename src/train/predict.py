@@ -20,7 +20,7 @@ TGCAT_FILES = {
 TARGET_LANGS = list(TGCAT_FILES.keys())
 LANG_DETECTION_MODEL = './models/external/lid.176.bin'
 
-INPUT_FILE = "data/external/dc0212-input.txt"
+INPUT_FILE = "data/external/dc0206-input.txt"
 
 def load_test_file(filepath):
     with open(filepath) as f:
@@ -86,19 +86,28 @@ if __name__ == '__main__':
     # load models and data
     test_data = load_test_file(INPUT_FILE)
     outputs = []
+    ref_data = []
     # predict languages
     for data in tqdm(test_data, desc='channels'):
         lang_code = predict_language(data)
         is_target_lang = lang_code in TARGET_LANGS
         if is_target_lang:
             top_predictions = predict_topics(data, lang_code)
+            data.update({
+                'lang_code': lang_code,
+                'category': top_predictions,
+            })
+            ref_data.append(data)
         else:
             top_predictions = {}
         outputs.append(str({
             'lang_code': lang_code if is_target_lang else 'other',
             'category': top_predictions
         }))
-    # predict topics
+    # save predictions
     fname = Path(INPUT_FILE).stem
     with open(f'./data/processed/{fname}.txt', 'w') as f:
         f.write('\n'.join(outputs),)
+    # save ref data
+    with open(f'./data/processed/{fname}_reference.json', 'w') as f:
+        json.dump(ref_data, f, indent=4, sort_keys=False)
