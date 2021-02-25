@@ -1,21 +1,22 @@
 """
 build a streamlit app to make predictions of user-provided links
 """
-import re
-import requests
-from bs4 import BeautifulSoup
+import html
 import random
+import re
 from urllib.parse import urljoin
+
+import altair as alt
+import pandas as pd
+import requests
 import streamlit as st
 import streamlit.components.v1 as components
-import pandas as pd
 import torch.jit
+from bs4 import BeautifulSoup
 from pyonmttok._ext import Tokenizer
-import html
-import altair as alt
+
 # custom
 from src.train.predict import TGCAT_FILES, predict_language, predict_topics
-
 
 # TODO localize topic names
 # TODO get channel counters
@@ -140,8 +141,8 @@ TEXTS = {
             """,
             """
             **Наша команда:**
-            - [Рустем Галилео, дата саентист](https://rusteam.github.io/)
-            - [Алмаз Мельников, инженер-исследователь](https://www.linkedin.com/in/almazmelnikov/)
+            - [Г. Рустем, дата саентист](https://rusteam.github.io/)
+            - [М. Алмаз, инженер-исследователь](https://www.linkedin.com/in/almazmelnikov/)
             """
         ],
     }
