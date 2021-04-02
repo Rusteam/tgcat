@@ -66,22 +66,17 @@ bool TooManyUnknownSymbols(const TDocument& doc) {
     return false;
 }
 
-tg::ELanguage DetectLanguage(const fasttext::FastText& model, const TDocument& document) {
+std::string DetectLanguage(const fasttext::FastText& model, const TDocument& document) {
     std::string sample(document.Text);
     auto pair = RunFasttextClf(model, sample, 0.1);
     if (!pair) {
-        return tg::LN_UNDEFINED;
+        return "none";
     }
     const std::string& label = pair->first;
     double probability = pair->second;
 
-    if (TooManyUnknownSymbols(document)) {
-        return tg::LN_OTHER;
+    if (label.size() == 2 && probability >= 0.5) {
+        return label;
     }
-
-    tg::ELanguage lang = FromString<tg::ELanguage>(label);
-    if ((lang == tg::LN_RU && probability >= 0.6) || (lang != tg::LN_RU && lang != tg::LN_UNDEFINED)) {
-        return lang;
-    }
-    return tg::LN_OTHER;
+    return "none";
 }

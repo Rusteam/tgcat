@@ -8,4 +8,4 @@ namespace fasttext {
 
 struct TDocument;
 
-tg::ELanguage DetectLanguage(const fasttext::FastText& model, const TDocument& document);
+std::string DetectLanguage(const fasttext::FastText& model, const TDocument& document);
