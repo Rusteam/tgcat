@@ -66,6 +66,7 @@ bool TooManyUnknownSymbols(const TDocument& doc) {
     return false;
 }
 
+// Return ISO code string
 std::string DetectLanguage(const fasttext::FastText& model, const TDocument& document) {
     std::string sample(document.Text);
     auto pair = RunFasttextClf(model, sample, 0.1);
@@ -75,7 +76,9 @@ std::string DetectLanguage(const fasttext::FastText& model, const TDocument& doc
     const std::string& label = pair->first;
     double probability = pair->second;
 
-    if (label.size() == 2 && probability >= 0.5) {
+
+    // Return language ISO code if it's length is 2
+    if (label.size() == 2 && probability >= 0.1) {
         return label;
     }
     return "none";

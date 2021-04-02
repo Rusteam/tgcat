@@ -1,7 +1,7 @@
 #include "db_document.h"
 #include "util.h"
 
-
+// Remove unused methods
 
 nlohmann::json TDbDocument::ToJson() const {
     nlohmann::json json({
