@@ -23,7 +23,7 @@ public:
     std::string Text;
     std::string Description;
 
-    std::string Language = "none";
+    std::string Language = "none";  // Change to string
     tg::ECategory Category = tg::ECategory::NC_UNDEFINED;
 
     using TEmbedding = std::vector<float>;
@@ -36,9 +36,9 @@ public:
 public:
 
     nlohmann::json ToJson() const;
-
-    bool IsRussian() const { return Language == "ru"; }
-    bool IsEnglish() const { return Language == "en"; }
+    // Remove unused methods
+    bool IsRussian() const { return Language == "ru"; }  // Change to comparison with string
+    bool IsEnglish() const { return Language == "en"; }  // Change to comparison with string
     bool IsNews() const { return Category != tg::NC_NOT_NEWS && Category != tg::NC_UNDEFINED; }
     bool HasSupportedLanguage() const { return Language != "none"; }
 
