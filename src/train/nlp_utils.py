@@ -16,6 +16,7 @@ import yaml
 import pandas as pd
 from pymystem3 import Mystem, constants
 import spacy
+from src.train.text_utils import preprocess_text, process_tokens
 
 
 def load_yaml(filepath):
@@ -180,6 +181,26 @@ def select_lemmas(tokens, target_pos):
     ''' Select lemmas with lemmas within given pos tags '''
     return [t['lemma'] for t in tokens
             if t['pos'] in target_pos]
+
+
+
+POS = {
+    "en": ['NOUN', 'PROPN', 'ADJ', 'VERB'],
+    "ru": ['A', 'S',]
+}
+
+load_lemmatizers()
+
+
+def lang_lemmatizer(language):
+    def lemmatize_text(text):
+        """ get lemmas and POS tags, select target POS lemmas and filter trash """
+        text = preprocess_text(text)
+        tokens = get_tokens(text, language)
+        lemmas = select_lemmas(tokens, POS[language])
+        lemmas = process_tokens(lemmas)
+        return lemmas
+    return lemmatize_text
 
 
 def count_pos_tags(tokens):

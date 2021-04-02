@@ -9,7 +9,7 @@ from tqdm import tqdm
 import fasttext
 import re
 # custom
-from src.train.text_utils import tokenize_text, lang_lemmatizer, preprocess_text
+from src.train.text_utils import tokenize_text, preprocess_text
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
@@ -20,7 +20,7 @@ TGCAT_FILES = {
 TARGET_LANGS = list(TGCAT_FILES.keys())
 LANG_DETECTION_MODEL = './models/external/lid.176.bin'
 
-INPUT_FILE = "data/external/dc0212-input.txt"
+INPUT_FILE = "data/external/dc0206-input.txt"
 
 def load_test_file(filepath):
     with open(filepath) as f:
@@ -45,7 +45,8 @@ def is_kz_lang(text):
 
 
 lang_detector = fasttext.load_model(LANG_DETECTION_MODEL)
-def predict_language(formatted_text):
+def predict_language(channel):
+    formatted_text = format_text(channel)
     predicted = lang_detector.predict(formatted_text)
     lang_code = predicted[0][0].replace('__label__', '')
     if lang_code == 'ru' and is_kz_lang(formatted_text):
@@ -59,10 +60,10 @@ def prepare_texts(channel_data, lang):
     and return raw texts and tokens
      """
     raw = list(map(lambda x: '\n'.join(x['recent_posts'] + [x['title'], x['description']]), channel_data))
-    if lang == 'ru':
-        tokenizer = lang_lemmatizer(lang)
-    else:
-        tokenizer = tokenize_text
+    # if lang == 'ru':
+    #     tokenizer = lang_lemmatizer(lang)
+    # else:
+    tokenizer = tokenize_text
     tokens = list(map(lambda x: tokenizer(x), raw))
     return raw, tokens
 
@@ -71,29 +72,42 @@ def load_models():
     """ load tgcat models """
     tgcat = {l: torch.jit.load(f) for l, f in TGCAT_FILES.items()}
     return tgcat
+
+
+tgcat = load_models()
+def predict_topics(channel_data, lang_code):
+    _, tokens = prepare_texts([channel_data], lang_code)
+    top_predictions = tgcat[lang_code](tokens)[0]
+    top_predictions = {k: round(v, 2) for k, v in top_predictions.items()}
+    return top_predictions
     
 
 if __name__ == '__main__':
     # load models and data
-    tgcat = load_models()
     test_data = load_test_file(INPUT_FILE)
     outputs = []
+    ref_data = []
     # predict languages
     for data in tqdm(test_data, desc='channels'):
-        formatted = format_text(data)
-        lang_code = predict_language(formatted)
+        lang_code = predict_language(data)
         is_target_lang = lang_code in TARGET_LANGS
         if is_target_lang:
-            _, tokens = prepare_texts([data], lang_code)
-            top_predictions = tgcat[lang_code](tokens)[0]
-            top_predictions = {k: round(v, 2) for k, v in top_predictions.items()}
+            top_predictions = predict_topics(data, lang_code)
+            data.update({
+                'lang_code': lang_code,
+                'category': top_predictions,
+            })
+            ref_data.append(data)
         else:
             top_predictions = {}
         outputs.append(str({
             'lang_code': lang_code if is_target_lang else 'other',
             'category': top_predictions
         }))
-    # predict topics
+    # save predictions
     fname = Path(INPUT_FILE).stem
     with open(f'./data/processed/{fname}.txt', 'w') as f:
         f.write('\n'.join(outputs),)
+    # save ref data
+    with open(f'./data/processed/{fname}_reference.json', 'w') as f:
+        json.dump(ref_data, f, indent=4, sort_keys=False)

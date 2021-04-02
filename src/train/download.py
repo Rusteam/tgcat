@@ -21,7 +21,6 @@ load_dotenv()
 # define variables to be used
 SESSION_FILE = str(PROJECT_DIR / 'src/train/tg_sess')
 envs = {k:os.environ[k] for k in ['TELEGRAM_APP_HASH', 'TELEGRAM_APP_ID']}
-tg_client = TelegramClient(SESSION_FILE, envs['TELEGRAM_APP_ID'], envs['TELEGRAM_APP_HASH'])
 
 # file with telegram channels
 CHANNELS_LIST_FILE = PROJECT_DIR / 'data/external/telegram_channels.csv'
@@ -42,15 +41,14 @@ def load_channels(channels_list_file):
     return tg_channels
 
 
-async def download_channel_messages(client, channel_usernames):
+async def download_channel_messages(client, channel_usernames, message_limit=CHANNEL_MESSAGE_LIMIT):
     '''
     Download messages from Telegram channels
     '''
-
     posts = list()
     for username in tqdm(channel_usernames, desc='channels'):
         try:
-            messages = await client.get_messages(username, limit=CHANNEL_MESSAGE_LIMIT)
+            messages = await client.get_messages(username, limit=message_limit)
             messages = [(username, msg.id, msg.date, msg.message,) for msg in messages]
             posts.extend(messages)
         except Exception as e:
@@ -110,14 +108,15 @@ async def download_posts():
     # download message from channels
     # channel_entities = await get_channel_entities(tg_client, channel_names)
     meta = await extract_channel_meta(tg_client, channel_names)
-    # messages = await download_channel_messages(tg_client, channel_names,)
-    # data = format_text_data(messages, target_channels)
+    messages = await download_channel_messages(tg_client, channel_names,)
+    data = format_text_data(messages, target_channels)
     await tg_client.disconnect()
-    return "data", meta
+    return data, meta
 
 
 if __name__ == '__main__':
+    tg_client = TelegramClient(SESSION_FILE, envs['TELEGRAM_APP_ID'], envs['TELEGRAM_APP_HASH'])
     with tg_client:
         posts,meta = tg_client.loop.run_until_complete(download_posts())
-    # posts.to_csv(POSTS, index=False)
+    posts.to_csv(POSTS, index=False)
     meta.to_csv(META, index=False)
