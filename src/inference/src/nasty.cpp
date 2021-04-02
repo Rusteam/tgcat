@@ -1,11 +1,11 @@
 #include "nasty.h"
 
 bool ComputeDocumentNasty(const TDbDocument& document) {
-    if ((document.Language == tg::LN_EN) && (document.Title.size() < 16)) {
+    if ((document.Language == "en") && (document.Title.size() < 16)) {
         return true;
     }
 
-    if ((document.Language == tg::LN_RU) && (document.Title.size() < 30)) {
+    if ((document.Language == "ru") && (document.Title.size() < 30)) {
         return true;
     }
 

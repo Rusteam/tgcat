@@ -80,14 +80,10 @@ int tgcat_detect_language(const struct TelegramChannelInfo *channel_info,
     if (!document.Text.empty()) {
 
         std::optional<TDbDocument> dbDoc = annotator.AnnotateLanguage(document);
+        std::string none_lg ("none");
 
-        if (dbDoc->IsEnglish()) {
-            memcpy(language_code, "en", 3);
-            return 0;
-        }
-
-        if (dbDoc->IsRussian()) {
-            memcpy(language_code, "ru", 3);
+        if (dbDoc->Language.compare(none_lg) != 0) {
+            memcpy(language_code, dbDoc->Language.c_str(), 3);
             return 0;
         }
     }

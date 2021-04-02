@@ -1,21 +1,22 @@
 """
 build a streamlit app to make predictions of user-provided links
 """
-import re
-import requests
-from bs4 import BeautifulSoup
+import html
 import random
+import re
 from urllib.parse import urljoin
+
+import altair as alt
+import pandas as pd
+import requests
 import streamlit as st
 import streamlit.components.v1 as components
-import pandas as pd
 import torch.jit
+from bs4 import BeautifulSoup
 from pyonmttok._ext import Tokenizer
-import html
-import altair as alt
+
 # custom
 from src.train.predict import TGCAT_FILES, predict_language, predict_topics
-
 
 # TODO localize topic names
 # TODO get channel counters
@@ -140,8 +141,8 @@ TEXTS = {
             """,
             """
             **Наша команда:**
-            - [Рустем Галилео, дата саентист](https://rusteam.github.io/)
-            - [Алмаз Мельников, инженер-исследователь](https://www.linkedin.com/in/almazmelnikov/)
+            - [Г. Рустем, дата саентист](https://rusteam.github.io/)
+            - [М. Алмаз, инженер-исследователь](https://www.linkedin.com/in/almazmelnikov/)
             """
         ],
     }
@@ -244,6 +245,14 @@ def get_channel_details(username):
     return channel_details
 
 
+def limit_post(post_message, max_len=300):
+    """ if post len too long, then cut it"""
+    if len(post_message) < max_len:
+        return post_message
+    else:
+        return post_message[:max_len] + '...'
+
+
 @st.cache
 def create_js_swiper(texts):
     """ create vertical SwiperJS to be rendered """
@@ -257,8 +266,14 @@ def create_js_swiper(texts):
                   position: relative;
                   height: 100%;
                 }
-            
-   
+                
+                 body {
+                  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+                  font-size: 14px;
+                  color: #000;
+                  margin: 0;
+                  padding: 0;
+                }
             
                 .swiper-container {
                   width: 100%;
@@ -293,7 +308,7 @@ def create_js_swiper(texts):
             <div class="swiper-container">
                 <div class="swiper-wrapper">
         """,
-        "\n".join([f'<div class="swiper-slide">{html.escape(t)}</div>' for t in texts]),
+        "\n".join([f'<div class="swiper-slide">{html.escape(limit_post(t))}</div>' for t in texts]),
         """
                 </div>
                 <div class="swiper-pagination"></div>
@@ -380,7 +395,7 @@ def main():
         st.text(TEXTS['recent_posts'][lang])
         if len(channel_details['recent_posts']):
             swiper = create_js_swiper(channel_details['recent_posts'])
-            components.html(swiper, height=400)
+            components.html(swiper, height=200)
         else:
             st.warning(ERRORS['no_posts'][lang])
 
