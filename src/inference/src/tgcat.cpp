@@ -17,16 +17,13 @@ const char *TGCAT_CATEGORY_NAME[] = {
 "Culture & Events",
 "Curious Facts",
 "Directories of Channels & Bots",
-"Drug Sale",
 "Economy & Finance",
 "Education",
 "Erotic Content",
 "Fashion & Beauty",
 "Fitness",
-"Forgery",
 "Food & Cooking",
 "Foreign Language Learning",
-"Hacked Accounts & Software",
 "Health & Medicine",
 "History",
 "Hobbies & Activities",
@@ -40,22 +37,17 @@ const char *TGCAT_CATEGORY_NAME[] = {
 "Movies",
 "Music",
 "Offers & Promotions",
-"Personal Data",
 "Pets",
-"Pirated Content",
 "Politics & Incidents",
-"Prostitution",
 "Psychology & Relationships",
 "Real Estate",
 "Recreation & Entertainment",
 "Religion & Spirituality",
 "Science",
-"Spam & Fake followers",
 "Sports",
 "Technology & Internet",
 "Travel & Tourism",
 "Video Games",
-"Weapon Sale",
 "Other"
 };
 
@@ -80,8 +72,8 @@ int tgcat_detect_language(const struct TelegramChannelInfo *channel_info,
     document.Text.append(channel_info->description);
     document.Text.append("\n");
 
-    for (int i=0;i<channel_info->post_count; i++){
-        document.Text.append(channel_info->posts[i]);
+    for (int i=0;i<channel_info->recent_post_count; i++){
+        document.Text.append(channel_info->recent_posts[i].text);
         document.Text.append("\n");
     }
 
@@ -112,8 +104,8 @@ int tgcat_detect_category(const struct TelegramChannelInfo *channel_info,
     document.Text.append(channel_info->description);
     document.Text.append("\n");
 
-    for (int i=0;i<channel_info->post_count; i++){
-        document.Text.append(channel_info->posts[i]);
+    for (int i=0;i<channel_info->recent_post_count; i++){
+        document.Text.append(channel_info->recent_posts[i].text);
         document.Text.append("\n");
     }
 
