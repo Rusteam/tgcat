@@ -22,12 +22,13 @@ LANG_DETECTION_MODEL = './models/external/lid.176.bin'
 
 INPUT_FILE = "data/external/dc0206-input.txt"
 
-def load_test_file(filepath):
+def load_test_file(filepath, verbose=True):
     with open(filepath) as f:
         test_data = f.read().split('\n')
     test_data = list(filter(lambda x: x != '', test_data))
     test_data = list(map(lambda x: json.loads(x), test_data))
-    print('Loaded', len(test_data), 'rows')
+    if verbose:
+        print('Loaded', len(test_data), 'rows')
     return test_data
 
 
