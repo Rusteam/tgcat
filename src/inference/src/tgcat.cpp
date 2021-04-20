@@ -72,8 +72,8 @@ int tgcat_detect_language(const struct TelegramChannelInfo *channel_info,
     document.Text.append(channel_info->description);
     document.Text.append("\n");
 
-    for (int i=0;i<channel_info->post_count; i++){
-        document.Text.append(channel_info->posts[i]);
+    for (int i=0;i<channel_info->recent_post_count; i++){
+        document.Text.append(channel_info->recent_posts[i].text);
         document.Text.append("\n");
     }
 
@@ -104,8 +104,8 @@ int tgcat_detect_category(const struct TelegramChannelInfo *channel_info,
     document.Text.append(channel_info->description);
     document.Text.append("\n");
 
-    for (int i=0;i<channel_info->post_count; i++){
-        document.Text.append(channel_info->posts[i]);
+    for (int i=0;i<channel_info->recent_post_count; i++){
+        document.Text.append(channel_info->recent_posts[i].text);
         document.Text.append("\n");
     }
 
