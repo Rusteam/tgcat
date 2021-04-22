@@ -9,6 +9,7 @@ src/train/*.session
 .env
 config/*.json
 ya_cloud*
+tests/*.csv
 
 ## Virtual environments
 venv/*
