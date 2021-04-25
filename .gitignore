@@ -21,7 +21,10 @@ __pycache__
 .idea
 .DS_Store
 models/external/
-data/external/dc*.txt
+data/external/
+data/processed
+data/raw/backup/
+data/interim
 .idea/
 
 # Jupyter
@@ -32,7 +35,6 @@ cmake-build-debug/
 libtgcat.so
 
 src/submission.zip
-data/
 models/
 resources/
 

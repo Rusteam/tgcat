@@ -1,0 +1,8 @@
+[core]
+    remote = telegram-contest
+['remote "telegram-contest"']
+    url = s3://telegram-contest
+    endpointurl = https://storage.yandexcloud.net
+    access_key_id = E-WdHjYtgcQz_I3RzHu8
+    secret_access_key = A4M0oZ_K5LoA-DrmlKBnrfWaGnkFnfNyXDSI1VhX
+    region = ru-central1
