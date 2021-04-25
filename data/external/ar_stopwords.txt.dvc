@@ -1,0 +1,4 @@
+outs:
+- md5: 94dda58164b1c18a2b74ebc96826e037
+  size: 2699
+  path: ar_stopwords.txt

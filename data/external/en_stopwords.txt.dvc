@@ -1,0 +1,4 @@
+outs:
+- md5: 3bf38274e8500acbc5dc06290bb762c7
+  size: 1251
+  path: en_stopwords.txt

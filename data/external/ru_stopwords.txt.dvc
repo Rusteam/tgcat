@@ -1,0 +1,4 @@
+outs:
+- md5: 57ca72bc9ab973c8b806bcb7bd2ab1fa
+  size: 1642
+  path: ru_stopwords.txt

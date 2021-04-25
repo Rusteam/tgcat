@@ -1,0 +1,4 @@
+outs:
+- md5: 1e9fa57d7af0cb5bedd79dbe129680f6
+  size: 3364763
+  path: posts.csv
