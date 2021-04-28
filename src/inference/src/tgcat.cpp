@@ -53,12 +53,14 @@ const char *TGCAT_CATEGORY_NAME[] = {
 
 
 std::string modelPath("./resources/lid.176.bin");
-std::string vocabularyRUPath("./resources/ru_tfidf.txt");
-std::string vocabularyENPath("./resources/en_tfidf.txt");
 std::string nbRUPath("./resources/ru_tgcat.pt");
 std::string nbENPath("./resources/en_tgcat.pt");
-size_t maxWords = 10000;
-TAnnotator annotator = TAnnotator(modelPath, nbRUPath, nbENPath, maxWords);
+std::string nbARPath("./resources/ar_tgcat.pt");
+std::string nbFAPath("./resources/fa_tgcat.pt");
+std::string nbUZPath("./resources/uz_tgcat.pt");
+
+size_t maxWords = 1000;
+TAnnotator annotator = TAnnotator(modelPath, nbRUPath, nbENPath, nbARPath, nbFAPath, nbUZPath, maxWords);
 
 int tgcat_init() {
     return 0;
