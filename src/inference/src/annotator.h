@@ -23,10 +23,13 @@ public:
             const std::string& modelPath,
             const std::string& nbRUPath,
             const std::string& nbENPath,
+            const std::string& nbARPath,
+            const std::string& nbFAPath,
+            const std::string& nbUZPath,
             size_t maxWords);
     std::optional<TDbDocument> AnnotateLanguage(TDocument& document) const;
     torch::Dict<std::string, double> AnnotateCategory(TDocument& document) const;
-    std::vector<std::string> PreprocessText(const std::string& text, bool isRU) const;
+    std::vector<std::string> PreprocessText(const std::string& text, const std::string& lang) const;
 
 private:
 
@@ -38,6 +41,10 @@ private:
 
     mutable torch::jit::script::Module RUNB;
     mutable torch::jit::script::Module ENNB;
+    mutable torch::jit::script::Module ARNB;
+    mutable torch::jit::script::Module FANB;
+    mutable torch::jit::script::Module UZNB;
+    size_t maximumWords;
 
     bool SaveNotNews = false;
     bool SaveTexts = false;

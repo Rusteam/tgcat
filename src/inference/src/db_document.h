@@ -39,6 +39,9 @@ public:
     // Remove unused methods
     bool IsRussian() const { return Language == "ru"; }  // Change to comparison with string
     bool IsEnglish() const { return Language == "en"; }  // Change to comparison with string
+    bool IsArabic() const { return Language == "ar"; }  // Change to comparison with string
+    bool IsFarsi() const { return Language == "fa"; }  // Change to comparison with string
+    bool IsUzbek() const { return Language == "uz"; }  // Change to comparison with string
     bool IsNews() const { return Category != tg::NC_NOT_NEWS && Category != tg::NC_UNDEFINED; }
     bool HasSupportedLanguage() const { return Language != "none"; }
 

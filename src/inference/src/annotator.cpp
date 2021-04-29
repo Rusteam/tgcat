@@ -20,12 +20,19 @@ TAnnotator::TAnnotator(
         const std::string& modelPath,
         const std::string& nbRUPath,
         const std::string& nbENPath,
+        const std::string& nbARPath,
+        const std::string& nbFAPath,
+        const std::string& nbUZPath,
         size_t maxWords) :
         Tokenizer(onmt::Tokenizer::Mode::Conservative, onmt::Tokenizer::Flags::CaseFeature)
 {
     LanguageDetector.loadModel(modelPath);
     RUNB = torch::jit::load(nbRUPath);
     ENNB = torch::jit::load(nbENPath);
+    ARNB = torch::jit::load(nbARPath);
+    FANB = torch::jit::load(nbFAPath);
+    UZNB = torch::jit::load(nbUZPath);
+    maximumWords = maxWords;
 }
 
 
@@ -40,7 +47,7 @@ std::optional<TDbDocument> TAnnotator::AnnotateLanguage(TDocument& document) con
 }
 
 
-std::vector<std::string> TAnnotator::PreprocessText(const std::string& text, bool isRU) const {
+std::vector<std::string> TAnnotator::PreprocessText(const std::string& text, const std::string& lang) const {
     setlocale(LC_ALL, "rus");
     // Remove links
     std::regex urlRe("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+");
@@ -52,18 +59,10 @@ std::vector<std::string> TAnnotator::PreprocessText(const std::string& text, boo
 
     // Leave only russian words
     std::vector<std::string> clean_tokens;
-    boost::regex xRegEx;
-    if (isRU){
-        xRegEx = boost::regex("[абвгдеёжзийклмнопрстуфхцчшщъыьэюя]+");
-    } else {
-        xRegEx = boost::regex("[a-z]+");
-    }
     for (int i = 0; i <= tokens.size() - 1; i++) {
-        boost::smatch xResults;
-        if(boost::regex_match(tokens[i],xResults, xRegEx)){
-            if (tokens[i].size() > 1){
-                clean_tokens.push_back(tokens[i]);
-            }
+        clean_tokens.push_back(tokens[i]);
+        if (clean_tokens.size() >= maximumWords) {
+            break;
         }
     }
     //std::string clean_token_string = boost::join(clean_tokens, " ");
@@ -72,7 +71,7 @@ std::vector<std::string> TAnnotator::PreprocessText(const std::string& text, boo
 
 torch::Dict<std::string, double> TAnnotator::AnnotateCategory(TDocument &document) const {
     std::optional<TDbDocument> dbDoc = AnnotateLanguage(document);
-    if (!dbDoc->IsEnglish() and !dbDoc->IsRussian()){
+    if (!dbDoc->IsEnglish() and !dbDoc->IsRussian() and !dbDoc->IsArabic() and !dbDoc->IsFarsi() and !dbDoc->IsUzbek()){
         torch::Dict<std::string, double> newProba;
         newProba.insert("Art & Design", 0.0);
         return newProba;
@@ -80,12 +79,7 @@ torch::Dict<std::string, double> TAnnotator::AnnotateCategory(TDocument &documen
 
     std::vector<std::string> cleanText;
     // Embedding
-    if (dbDoc->IsEnglish()){
-        cleanText = PreprocessText(document.Text, false);
-    }
-    if (dbDoc->IsRussian()){
-        cleanText = PreprocessText(document.Text, true);
-    }
+    cleanText = PreprocessText(document.Text, dbDoc->Language);
     // Prepare input for Naive Bayes
     std::vector<std::vector<std::string>> cleanTextList;
     cleanTextList.push_back(cleanText);
@@ -100,6 +94,15 @@ torch::Dict<std::string, double> TAnnotator::AnnotateCategory(TDocument &documen
     }
     if (dbDoc->IsRussian()){
         outputTensor = RUNB.forward(inputs);
+    }
+    if (dbDoc->IsArabic()){
+        outputTensor = ARNB.forward(inputs);
+    }
+    if (dbDoc->IsFarsi()){
+        outputTensor = FANB.forward(inputs);
+    }
+    if (dbDoc->IsUzbek()){
+        outputTensor = UZNB.forward(inputs);
     }
     auto categoryProba = outputTensor.toList().get(0).toGenericDict();
     torch::Dict<std::string, double> newProba;
