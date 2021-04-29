@@ -2,7 +2,7 @@
 Run inference on files
 """
 from pathlib import Path
-import os
+import os, sys
 import torch
 import json
 from tqdm import tqdm
@@ -16,11 +16,16 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 TGCAT_FILES = {
         'ru': 'models/trained/tgcat/ru_tgcat.pt',
         'en': 'models/trained/tgcat/en_tgcat.pt',
+        'ar': 'models/trained/tgcat/ar_tgcat.pt',
+        'fa': 'models/trained/tgcat/fa_tgcat.pt',
+        'uz': 'models/trained/tgcat/uz_tgcat.pt',
     }
 TARGET_LANGS = list(TGCAT_FILES.keys())
 LANG_DETECTION_MODEL = './models/external/lid.176.bin'
 
-INPUT_FILE = "data/external/dc0206-input.txt"
+assert len(sys.argv) > 1, "Provide input file path as `predict.py path/to/file.txt`"
+INPUT_FILE = sys.argv[1]
+assert os.path.exists(INPUT_FILE), f"{INPUT_FILE} does not exist"
 
 def load_test_file(filepath, verbose=True):
     with open(filepath) as f:
@@ -34,7 +39,8 @@ def load_test_file(filepath, verbose=True):
 
 def format_text(channel):
     """ format text for running language detection """
-    formatted = '\n'.join([channel['description'], '\n'.join(channel['recent_posts'])]).strip().replace('\n',' ')
+    formatted = prepare_text(channel)
+    formatted = re.sub("\n", " ", formatted)
     formatted = preprocess_text(formatted)
     return formatted
 
@@ -55,18 +61,15 @@ def predict_language(channel):
     return lang_code
 
 
-def prepare_texts(channel_data, lang):
-    """
-    convert channel data to tokenized texts
-    and return raw texts and tokens
-     """
-    raw = list(map(lambda x: '\n'.join(x['recent_posts'] + [x['title'], x['description']]), channel_data))
-    # if lang == 'ru':
-    #     tokenizer = lang_lemmatizer(lang)
-    # else:
-    tokenizer = tokenize_text
-    tokens = list(map(lambda x: tokenizer(x), raw))
-    return raw, tokens
+def prepare_text(row):
+    """ extract and merge all text from a channel """
+    post_texts = '\n'.join([
+        post.get('text', "")
+        if isinstance(post, dict) else post
+        for post in row['recent_posts']
+    ])
+    merged = '\n'.join([row['title'], row['description'], post_texts])
+    return merged
 
 
 def load_models():
@@ -77,7 +80,7 @@ def load_models():
 
 tgcat = load_models()
 def predict_topics(channel_data, lang_code):
-    _, tokens = prepare_texts([channel_data], lang_code)
+    tokens = prepare_text(channel_data)
     top_predictions = tgcat[lang_code](tokens)[0]
     top_predictions = {k: round(v, 2) for k, v in top_predictions.items()}
     return top_predictions
