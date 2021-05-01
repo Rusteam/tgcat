@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
-project(tgcat-tester VERSION 1.0.0 LANGUAGES C)
+project(tgcat-tester VERSION 2.0.0 LANGUAGES C)
 
 add_executable(tgcat-tester tester.c json.c json-builder.c)
 
