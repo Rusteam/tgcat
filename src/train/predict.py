@@ -23,9 +23,6 @@ TGCAT_FILES = {
 TARGET_LANGS = list(TGCAT_FILES.keys())
 LANG_DETECTION_MODEL = './models/external/lid.176.bin'
 
-assert len(sys.argv) > 1, "Provide input file path as `predict.py path/to/file.txt`"
-INPUT_FILE = sys.argv[1]
-assert os.path.exists(INPUT_FILE), f"{INPUT_FILE} does not exist"
 
 def load_test_file(filepath, verbose=True):
     with open(filepath) as f:
@@ -87,6 +84,10 @@ def predict_topics(channel_data, lang_code):
     
 
 if __name__ == '__main__':
+    # read input file
+    assert len(sys.argv) > 1, "Provide input file path as `predict.py path/to/file.txt`"
+    INPUT_FILE = sys.argv[1]
+    assert os.path.exists(INPUT_FILE), f"{INPUT_FILE} does not exist"
     # load models and data
     test_data = load_test_file(INPUT_FILE)
     outputs = []

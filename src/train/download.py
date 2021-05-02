@@ -8,6 +8,7 @@ Config params:
       categories: list of categories
       telegram_channels_file: table with telegram channels data
 '''
+import asyncio
 import  os
 import pandas as pd
 from tqdm import tqdm
@@ -26,8 +27,8 @@ envs = {k:os.environ[k] for k in ['TELEGRAM_APP_HASH', 'TELEGRAM_APP_ID']}
 CHANNELS_LIST_FILE = PROJECT_DIR / 'data/external/telegram_channels.csv'
 CHANNEL_MESSAGE_LIMIT = 10
 
-POSTS = 'data/raw/posts.csv'
-META = 'data/raw/meta.csv'
+POSTS = 'data/raw/r-2/downloads/posts.csv'
+META = 'data/raw/r-2/downloads/meta.csv'
 
 
 def load_channels(channels_list_file):
@@ -118,5 +119,6 @@ if __name__ == '__main__':
     tg_client = TelegramClient(SESSION_FILE, envs['TELEGRAM_APP_ID'], envs['TELEGRAM_APP_HASH'])
     with tg_client:
         posts,meta = tg_client.loop.run_until_complete(download_posts())
+        # res = tg_client.loop.run_until_complete(download_channel_messages(tg_client, ['redakciya_channel', 'thingsprogrammersdo']))
     posts.to_csv(POSTS, index=False)
     meta.to_csv(META, index=False)
