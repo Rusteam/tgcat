@@ -8,6 +8,7 @@ Config params:
       categories: list of categories
       telegram_channels_file: table with telegram channels data
 '''
+import asyncio
 import  os
 import pandas as pd
 from tqdm import tqdm
@@ -26,17 +27,21 @@ envs = {k:os.environ[k] for k in ['TELEGRAM_APP_HASH', 'TELEGRAM_APP_ID']}
 CHANNELS_LIST_FILE = PROJECT_DIR / 'data/external/telegram_channels.csv'
 CHANNEL_MESSAGE_LIMIT = 10
 
-POSTS = 'data/raw/posts.csv'
-META = 'data/raw/meta.csv'
+POSTS = 'data/raw/r-2/downloads/posts.csv'
+META = 'data/raw/r-2/downloads/meta.csv'
+RESUME = True
 
 
-def load_channels(channels_list_file):
+def load_channels(channels_list_file, exclude=[]):
     '''
     Load list of telegram channels to download posts from
     '''
     assert channels_list_file.exists(), f"{CHANNELS_LIST_FILE} does not exist"
     tg_channels = pd.read_csv(channels_list_file)
     tg_channels['username'] = tg_channels['link'].apply(lambda x: x.split('/')[-1])
+    tg_channels.drop_duplicates(subset=['username'], inplace=True)
+    if len(exclude) > 0:
+        tg_channels = tg_channels.query(f'username != {exclude}')
     print(f"{len(tg_channels)} channels loaded")
     return tg_channels
 
@@ -98,7 +103,12 @@ async def download_posts():
     Run post download pipeline
     '''
     # load channels
-    target_channels = load_channels(CHANNELS_LIST_FILE)
+    if RESUME:
+        meta = pd.read_csv(META, usecols=['username'])
+        already_downloaded = meta['username'].tolist()
+    else:
+        already_downloaded = []
+    target_channels = load_channels(CHANNELS_LIST_FILE, exclude=already_downloaded)
     channel_names = list(target_channels['username'].unique())
     # test telegram connection
     async with tg_client:
@@ -118,5 +128,7 @@ if __name__ == '__main__':
     tg_client = TelegramClient(SESSION_FILE, envs['TELEGRAM_APP_ID'], envs['TELEGRAM_APP_HASH'])
     with tg_client:
         posts,meta = tg_client.loop.run_until_complete(download_posts())
-    posts.to_csv(POSTS, index=False)
-    meta.to_csv(META, index=False)
+        # res = tg_client.loop.run_until_complete(download_channel_messages(tg_client, ['redakciya_channel', 'thingsprogrammersdo']))
+    save_kwargs = dict(mode='a' if RESUME else 'w', header=not RESUME)
+    posts.to_csv(POSTS, index=False, **save_kwargs)
+    meta.to_csv(META, index=False, **save_kwargs)

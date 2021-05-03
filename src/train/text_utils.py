@@ -60,6 +60,19 @@ def preprocess_text(text):
 def tokenize_text(text):
     """ split into lowercase tokens """
     text = preprocess_text(text)
+    text = re.sub('\n+', '. ', text)
     tokens,_ = tokenizer.tokenize(text)
     tokens = process_tokens(tokens)
     return tokens
+
+
+def flatten_category(labelled_data):
+    """ convert multiple labels to multiple rows """
+    data = []
+    for i, row in tqdm(labelled_data.iterrows(), desc='rows'):
+        for t,w in row['category'].items():
+            row['topic'] = t
+            row['weight'] = w
+            data.append(row)
+    data = pd.DataFrame(data)
+    return data

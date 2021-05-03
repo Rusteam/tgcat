@@ -17,7 +17,7 @@ import seaborn as sns
 from tqdm import tqdm
 import torch
 # custom
-from src.train.predict import prepare_texts, load_models, load_test_file, format_text, predict_language
+from src.train.predict import prepare_text, load_models, load_test_file, format_text, predict_language
 
 
 # ## Load Data
@@ -25,9 +25,9 @@ from src.train.predict import prepare_texts, load_models, load_test_file, format
 FILES = [
     # 'data/external/dc0130-input.txt',
     # 'data/external/dc0202-input.txt',
-    'data/external/dc0212-input.txt',
+    'data/external/r-2/dc0421-input/original/dc0421-input-all.txt',
 ]
-TARGET_LANGS = ['en', 'ru']
+TARGET_LANGS = ['uz', 'ar', 'fa']
 TRAIN_DATA = './data/interim/train_data.csv'
 TOP_N = 1
 
@@ -35,6 +35,7 @@ TOP_N = 1
 # Load data
 test_data = [load_test_file(f) for f in FILES]
 test_data = sum(test_data, [])
+test_data = random.sample(test_data, 10)
 print('Num examples', len(test_data))
 
 # ## Detect target languages
@@ -62,12 +63,13 @@ for l in tqdm(TARGET_LANGS, desc='langs'):
     subset = list(filter(lambda x: x['lang_code'] == l,
                          target))
     train_subset = train_data.query(f'language == "{l}"')
-    raw,tokens = prepare_texts(subset, lang=l)
+    tokens = subset.apply(prepare_text, axis=1)
     embeddings = tgcat[l].vect(tokens)
     probs = tgcat[l].clf(embeddings)
     entropy = torch.sum(probs * torch.log(probs), dim=1)
     info_density = (-1) * torch.cdist(embeddings, embeddings, p=2).mean(1)
-    train_embeddings = tgcat[l].vect(prepare_texts(train_subset.to_dict('records'), lang=l)[1])
+    train_tokens = train_subset.apply(prepare_text, axis=1).to_dict('records')
+    train_embeddings = tgcat[l].vect(train_tokens)
     diversity = torch.cdist(embeddings, train_embeddings, p=2).mean(1)
     score = entropy * info_density * diversity
     top_score = score.argsort(0, descending=False)[:TOP_N]
