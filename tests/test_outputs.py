@@ -8,8 +8,13 @@ import pandas as pd
 # custom
 from src.train.predict import load_test_file
 
-SRC_FILE = 'data/processed/dc0212-input.txt'
-DEST_FILE = 'data/processed/dc0212-category_output.txt'
+OUTPUTS = [
+    {
+        "c++": "data/processed/dc0415-category_output.txt",
+        "py": "data/processed/dc0415-input-all.txt"
+    },
+]
+
 
 def read_file(filepath):
     lines = Path(filepath).read_text().strip().split('\n')
@@ -19,41 +24,45 @@ def read_file(filepath):
 
 class OutputTester(unittest.TestCase):
     def setUp(self):
-        self.src = read_file(SRC_FILE)
-        self.dest = read_file(DEST_FILE)
+        self.data = [{
+            'c++': read_file(files['c++']),
+            'py': read_file(files['py'])
+        } for files in OUTPUTS]
 
 
     def test_lang_codes(self,):
         """ compare language predictions """
-        langs = pd.DataFrame(dict(
-            src = list(map(lambda x: x['lang_code'], self.src)),
-            dest = list(map(lambda x: x['lang_code'], self.dest)),
-        ))
-        langs['is_equal'] = langs['src'] == langs['dest']
-        print("LANGUAGE TESTS:")
-        print(classification_report(langs['src'], langs['dest']))
-        print(pd.crosstab(langs['src'], langs['dest']))
-        acc = accuracy_score(langs['src'], langs['dest'])
-        langs.to_csv('tests/language_test_output.csv', index=True)
-        self.assertTrue(acc > 0.99)
+        for data in self.data:
+            langs = pd.DataFrame(dict(
+                src = list(map(lambda x: x['lang_code'], data['py'])),
+                dest = list(map(lambda x: x['lang_code'], data['c++'])),
+            ))
+            langs['is_equal'] = langs['src'] == langs['dest']
+            print("LANGUAGE TESTS:")
+            print(classification_report(langs['src'], langs['dest']))
+            print(pd.crosstab(langs['src'], langs['dest']))
+            acc = accuracy_score(langs['src'], langs['dest'])
+            # langs.to_csv('tests/language_test_output.csv', index=True)
+            self.assertTrue(acc > 0.99)
 
 
     def test_topics(self):
         """ compare topic predictions """
-        topics = pd.DataFrame(dict(
-            src=list(map(lambda x: x['category'], self.src)),
-            dest=list(map(lambda x: x['category'], self.dest)),
-        ))
-        topics['len_equal'] = topics['src'].apply(len) == topics['dest'].apply(len)
-        topics['match_score'] = topics.apply(lambda x: self.compare_topics(x['src'], x['dest']),
-                                             axis=1)
-        topics['is_correct'] = topics['match_score'] == 1.0
-        topics.to_csv('tests/category_test_output.csv', index=False)
-        print("TOPIC TESTS:")
-        self.assertTrue(topics['match_score'].mean() > 0.99, msg="\n".join([
-            f"length score: {topics['len_equal'].mean()}",
-            f"Topic match score: {topics['match_score'].mean()}"
-            ]))
+        for data in self.data:
+            topics = pd.DataFrame(dict(
+                src=list(map(lambda x: x['category'], data['py'])),
+                dest=list(map(lambda x: x['category'], data['c++'])),
+            ))
+            topics['len_equal'] = topics['src'].apply(len) == topics['dest'].apply(len)
+            topics['match_score'] = topics.apply(lambda x: self.compare_topics(x['src'], x['dest']),
+                                                 axis=1)
+            topics['is_correct'] = topics['match_score'] == 1.0
+            # topics.to_csv('tests/category_test_output.csv', index=False)
+            print("TOPIC TESTS:")
+            self.assertTrue(topics['match_score'].mean() > 0.99, msg="\n".join([
+                f"length score: {topics['len_equal'].mean()}",
+                f"Topic match score: {topics['match_score'].mean()}"
+                ]))
 
 
     @staticmethod

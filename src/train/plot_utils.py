@@ -185,7 +185,7 @@ def barplots(data_dict, n_row, n_col, horizontal=True, fig_dims=None, save_fig=N
     plt.show()
 
 
-def scatterplots(data_dict, n_row, n_col, 
+def scatterplots(data_dict, n_row, n_col,
                  fig_dims=None, save_fig=None, **kwargs):
     '''
     Plot multiple scatterplots for a data_dict

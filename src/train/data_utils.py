@@ -1,6 +1,8 @@
 """
 helpers
 """
+from copy import deepcopy
+
 from tqdm.autonotebook import tqdm
 import numpy as np
 import pandas as pd
@@ -12,9 +14,9 @@ def flatten_category(labelled_data):
     data = []
     for i, row in tqdm(labelled_data.iterrows(), desc='rows'):
         for t,w in row['category'].items():
-            row['topic'] = t
+            row['topic'] = t.strip()
             row['weight'] = w
-            data.append(row)
+            data.append(deepcopy(row))
     data = pd.DataFrame(data)
     return data
 

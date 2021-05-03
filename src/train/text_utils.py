@@ -60,6 +60,7 @@ def preprocess_text(text):
 def tokenize_text(text):
     """ split into lowercase tokens """
     text = preprocess_text(text)
+    text = re.sub('\n+', '. ', text)
     tokens,_ = tokenizer.tokenize(text)
     tokens = process_tokens(tokens)
     return tokens
