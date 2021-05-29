@@ -1,5 +1,26 @@
 import re
 import pyonmttok
+import json
+
+from tqdm import tqdm
+import pandas as pd
+
+
+def load_test_file(filepath, verbose=True):
+    with open(filepath) as f:
+        test_data = f.read().split('\n')
+    test_data = list(filter(lambda x: x != '', test_data))
+    test_data = list(map(lambda x: json.loads(x), test_data))
+    if verbose:
+        print('Loaded', len(test_data), 'rows')
+    return test_data
+
+
+def save_json(data, filepath, verbose=True):
+    with open(filepath, 'w') as f:
+        json.dump(data, f, indent=4, sort_keys=False)
+    if verbose:
+        print(f'Saved {len(data)} data points to {filepath}')
 
 
 def process_topics(topics):

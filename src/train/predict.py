@@ -8,30 +8,15 @@ import json
 from tqdm import tqdm
 import fasttext
 import re
-# custom
-from src.train.text_utils import tokenize_text, preprocess_text
+
+from src.train import TGCAT_FILES
+from src.train.text_utils import preprocess_text, load_test_file, tokenize_text
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-TGCAT_FILES = {
-        'ru': 'models/trained/tgcat/ru_tgcat.pt',
-        'en': 'models/trained/tgcat/en_tgcat.pt',
-        'ar': 'models/trained/tgcat/ar_tgcat.pt',
-        'fa': 'models/trained/tgcat/fa_tgcat.pt',
-        'uz': 'models/trained/tgcat/uz_tgcat.pt',
-    }
+
 TARGET_LANGS = list(TGCAT_FILES.keys())
 LANG_DETECTION_MODEL = './models/external/lid.176.bin'
-
-
-def load_test_file(filepath, verbose=True):
-    with open(filepath) as f:
-        test_data = f.read().split('\n')
-    test_data = list(filter(lambda x: x != '', test_data))
-    test_data = list(map(lambda x: json.loads(x), test_data))
-    if verbose:
-        print('Loaded', len(test_data), 'rows')
-    return test_data
 
 
 def format_text(channel):
@@ -63,7 +48,7 @@ def prepare_text(row):
     post_texts = '\n'.join([
         post.get('text', "")
         if isinstance(post, dict) else post
-        for post in row['recent_posts']
+        for post in row.get('recent_posts', [])
     ])
     merged = '\n'.join([row['title'], row['description'], post_texts])
     return merged
@@ -77,8 +62,9 @@ def load_models():
 
 tgcat = load_models()
 def predict_topics(channel_data, lang_code):
-    tokens = prepare_text(channel_data)
-    top_predictions = tgcat[lang_code](tokens)[0]
+    text = prepare_text(channel_data)
+    tokens = tokenize_text(text)
+    top_predictions = tgcat[lang_code]([tokens])[0]
     top_predictions = {k: round(v, 2) for k, v in top_predictions.items()}
     return top_predictions
     
@@ -98,11 +84,6 @@ if __name__ == '__main__':
         is_target_lang = lang_code in TARGET_LANGS
         if is_target_lang:
             top_predictions = predict_topics(data, lang_code)
-            data.update({
-                'lang_code': lang_code,
-                'category': top_predictions,
-            })
-            ref_data.append(data)
         else:
             top_predictions = {}
         outputs.append(str({
@@ -113,6 +94,3 @@ if __name__ == '__main__':
     fname = Path(INPUT_FILE).stem
     with open(f'./data/processed/{fname}.txt', 'w') as f:
         f.write('\n'.join(outputs),)
-    # save ref data
-    with open(f'./data/processed/{fname}_reference.json', 'w') as f:
-        json.dump(ref_data, f, indent=4, sort_keys=False)

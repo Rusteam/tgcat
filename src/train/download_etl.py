@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from src.train import PROJECT_DIR
 from src.train.download import load_channels
-from src.train.predict import load_test_file
+from src.train.text_utils import load_test_file
 
 
 CHANNELS_LIST_FILE = PROJECT_DIR / 'data/external/telegram_channels.csv'

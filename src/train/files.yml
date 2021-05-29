@@ -1,0 +1,14 @@
+models:
+  'ru': 'models/trained/tgcat/ru_tgcat.pt'
+  'en': 'models/trained/tgcat/en_tgcat.pt'
+  'ar': 'models/trained/tgcat/ar_tgcat.pt'
+  'fa': 'models/trained/tgcat/fa_tgcat.pt'
+  'uz': 'models/trained/tgcat/uz_tgcat.pt'
+
+reference_data:
+  - "in_file": "data/external/r-2/dc0415-input/original/dc0415-input-all.txt"
+    "out_file": "data/processed/dc0415-category_output.txt"
+  - "in_file": "data/external/r-2/dc0421-input/original/dc0421-input-all.txt"
+    "out_file": "data/processed/dc0421-category_output.txt"
+  - "in_file": "data/external/r-2/dc0428-input/original/dc0428-input-all.txt"
+    "out_file": "data/processed/dc0428-category_output.txt"

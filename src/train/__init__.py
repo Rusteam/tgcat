@@ -1,1 +1,1 @@
-from pathlib import PathPROJECT_DIR = Path(__file__).parent.parent.parent
+from pathlib import Pathimport yamlPROJECT_DIR = Path(__file__).parent.parent.parentFILES = Path(__file__).parent / 'files.yml'with open(FILES, 'r') as f:    files = yaml.safe_load(f)TGCAT_FILES = files['models']REFERENCE_DATA = files['reference_data']__all__ = [PROJECT_DIR, TGCAT_FILES, REFERENCE_DATA]

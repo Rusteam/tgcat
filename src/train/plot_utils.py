@@ -1,4 +1,5 @@
 # coding=utf-8
+from collections import Counter
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -204,4 +205,29 @@ def scatterplots(data_dict, n_row, n_col,
     if save_fig:
         plt.savefig(save_fig)
     plt.tight_layout()
+    plt.show()
+
+
+def show_lang_stats(data: pd.DataFrame):
+    """ show distribution of languages and topics in data """
+    lang_counts = data['lang_code'].value_counts()
+    c = Counter()
+    _ = [c.update(cat) for cat in data['category']]
+    c = pd.DataFrame(c.most_common(len(c)), columns=['topic','score'])
+    fig,axes = plt.subplots(1, 2, figsize=(15,10))
+    sns.barplot(x=lang_counts, y=lang_counts.index, ax=axes[1]);
+    sns.barplot(x=c['score'],y=c['topic'], ax=axes[0] );
+    plt.show()
+
+
+def violinplot(x, y, ylim='auto', **violin_kwargs):
+    """ show a boxplot """
+    sns.violinplot(x=x, y=y, **violin_kwargs)
+    if ylim != 'auto':
+        assert isinstance(ylim, (list, tuple)) and len(ylim) == 2, "y limits has to be a tuple of two elements"
+        ymin,ymax = ylim
+        plt.ylim(ymin,ymax);
+        top_vals = y.groupby(x).max()
+        # for x_point,val in top_vals:
+        #     plt.text(x_point,ymax,text=val)
     plt.show()

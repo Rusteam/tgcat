@@ -15,26 +15,39 @@ import torch.jit
 from bs4 import BeautifulSoup
 from pyonmttok._ext import Tokenizer
 
-# custom
-from src.train.predict import TGCAT_FILES, predict_language, predict_topics
+from src.train import TGCAT_FILES
+from src.train.predict import predict_language, predict_topics
 
 # TODO localize topic names
-# TODO get channel counters
+# TODO filter by channel counts
+# TODO save reference data to a db
 
 
+UI_LANGS = ['en', 'ru']
 LANGS = list(TGCAT_FILES.keys())
+REF_FILES = [
+    # 'data/processed/reference/dc0415.json',
+    # 'data/processed/reference/dc0421.json',
+    'data/processed/reference/dc0428.json',
+]
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246",
+    "Mozilla/5.0 (X11; CrOS x86_64 8172.45.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.64 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/601.3.9 (KHTML, like Gecko) Version/9.0.2 Safari/601.3.9",
+    "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1"
+]
 TEXTS = {
     "title": {
         'en': "Topic classification for Telegram channels",
         "ru": "Распознавание тематики Телеграм-каналов",
     },
     "description": {
-        "en": "Use machine learning to classify what Telegram channels are talking about",
+        "en": "Channel meta-data (title and description) and posts are used to detect topics",
         "ru": "Определение тематики постов на основе обученных машинных алгоритмов",
     },
     "instruction_expander": {
-        "en": "Very short intro",
-        "ru": "Очень короткая инструкция"
+        "en": "Short guide",
+        "ru": "Короткая инструкция"
     },
     "instructions": {
         "en": """
@@ -100,6 +113,10 @@ TEXTS = {
         'en': 'Select 1 or more topics',
         'ru': "Выберите тематики"
     },
+    "min_subscribers": {
+        'en': 'No. subscribers',
+        'ru': "Число подписчиков"
+    },
     "spinner_channel": {
         "en": "Querying Telegram for channel details",
         "ru": "Загружаем информацию о канале"
@@ -127,8 +144,8 @@ TEXTS = {
             """,
             """
             **Out team:**
-            - [Rustem Galileo, applied data scientist](https://rusteam.github.io/)
-            - [Almaz Melnikov, machine learning engineer](https://www.linkedin.com/in/almazmelnikov/)
+            - [Rustem G., applied data scientist](https://rusteam.github.io/)
+            - [Almaz M., machine learning engineer](https://www.linkedin.com/in/almazmelnikov/)
             """
         ],
         "ru": [
@@ -161,24 +178,14 @@ ERRORS = {
         "ru": "не похоже, что {username} является открытым каналом"
     },
     "nothing_selected": {
-        "en": "Select topics of interest to see similar channels",
-        "ru": "Выберите интересующие вас темы, чтобы отобразить схожие каналы"
+        "en": "Change filters above to see similar channels",
+        "ru": "Откорректируйте условия поиска, чтобы отобразить схожие каналы"
     },
     "no_posts": {
         'en': "Unable to fetch messages",
         "ru": "Отсутствует доступ к сообщениям из канала"
     }
 }
-REF_FILES = [
-    'data/processed/dc0212-input_reference.json',
-    "data/processed/dc0206-input_reference.json",
-]
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246",
-    "Mozilla/5.0 (X11; CrOS x86_64 8172.45.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.64 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/601.3.9 (KHTML, like Gecko) Version/9.0.2 Safari/601.3.9",
-    "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1"
-]
 
 
 
@@ -191,10 +198,11 @@ def load_channels():
 
 
 @st.cache()
-def filter_channels(selected_topics, lang):
+def filter_channels(channels, selected_topics, lang, min_subscribers):
     is_match = channels['topics'].apply(lambda x: len(set(selected_topics).intersection(x)) > 0)
     is_lang = channels['lang_code'] == lang
-    return channels.copy().loc[is_match & is_lang].reset_index(drop=True)
+    has_min_subscribers = channels['subscribers'] >= min_subscribers
+    return channels.copy().loc[is_match & is_lang & has_min_subscribers].reset_index(drop=True)
 
 
 @st.cache(hash_funcs={
@@ -208,7 +216,6 @@ def get_channel_topics(channel_details):
         predictions = predict_topics(channel_details, channel_lang)
     else:
         predictions = {}
-    # predictions = pd.DataFrame(predictions, index=[0])
     return channel_lang, predictions
 
 
@@ -332,10 +339,11 @@ def create_js_swiper(texts):
 
 def create_barplot(predictions):
     data = pd.DataFrame([{'topic': k, 'weight': v} for k,v in predictions.items()], )
-    chart = alt.Chart(data).mark_bar().encode(x='weight', y='topic', color='topic')
+    chart = alt.Chart(data).mark_bar().encode(x='weight', y=alt.Y('topic', sort='-x'), color=alt.Color('topic', legend=None))
     return chart
 
 
+# load reference data
 channels = load_channels()
 
 
@@ -344,7 +352,7 @@ def main():
     # select language
     _,header_right = st.beta_columns((9,1))
     with header_right:
-        lang = st.selectbox("", options=LANGS,)
+        lang = st.selectbox("", options=UI_LANGS,)
 
     # about
     st.sidebar.title(TEXTS['about_title'][lang])
@@ -370,7 +378,6 @@ def main():
     # get predictions
     with st.spinner(TEXTS['spinner_channel'][lang]):
         try:
-            # channel_details = asyncio.run(get_channel_details(username), debug=True)
             channel_details = get_channel_details(username)
         except Exception as e:
             print(e)
@@ -408,10 +415,12 @@ def main():
     # More channels with the same topic
     st.markdown('---')
     st.subheader(TEXTS['similar_channels'][lang])
-    more_topics = st.multiselect(TEXTS['select_topics'][lang], list(predictions.keys()),)
-    similar_channels = filter_channels(more_topics, channel_lang)
+    more_topics_left,min_subscribers_right = st.beta_columns([5,2])
+    more_topics = more_topics_left.multiselect(TEXTS['select_topics'][lang], list(predictions.keys()),)
+    min_subscribers = min_subscribers_right.number_input(TEXTS['min_subscribers'][lang], min_value=0, max_value=int(1e7), value=int(1e4), step=1000)
+    similar_channels = filter_channels(channels, more_topics, channel_lang, min_subscribers)
     if len(similar_channels) > 0:
-        st.table(similar_channels[['title','description','category']].sample(min(10, len(similar_channels))).reset_index(drop=True))
+        st.table(similar_channels[['title','description','category','subscribers']].sample(min(10, len(similar_channels))).reset_index(drop=True))
     else:
         st.warning(ERRORS['nothing_selected'][lang])
 
