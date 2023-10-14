@@ -1,7 +1,4 @@
 #include "annotator.h"
-#include "detect.h"
-#include "document.h"
-#include "nasty.h"
 #include "thread_pool.h"
 #include "timer.h"
 #include "util.h"
@@ -17,30 +14,15 @@
 #include "boost/algorithm/string/regex.hpp"
 
 TAnnotator::TAnnotator(
-        const std::string& modelPath,
-        const std::string& nbRUPath,
-        const std::string& nbENPath,
-        size_t maxWords) :
+            const std::string& langPath,
+        size_t maxChars):
         Tokenizer(onmt::Tokenizer::Mode::Conservative, onmt::Tokenizer::Flags::CaseFeature)
 {
-    LanguageDetector.loadModel(modelPath);
-    RUNB = torch::jit::load(nbRUPath);
-    ENNB = torch::jit::load(nbENPath);
+    LANG = torch::jit::load(langPath);
 }
 
 
-std::optional<TDbDocument> TAnnotator::AnnotateLanguage(TDocument& document) const {
-    TDbDocument dbDoc;
-    std::regex urlRe("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+");
-    std::string processed_text = std::regex_replace(document.Text, urlRe, " ");
-    document.Text = processed_text;
-
-    dbDoc.Language = DetectLanguage(LanguageDetector, document);
-    return dbDoc;
-}
-
-
-std::vector<std::string> TAnnotator::PreprocessText(const std::string& text, bool isRU) const {
+std::vector<std::string> TAnnotator::PreprocessText(const std::string& text) const {
     setlocale(LC_ALL, "rus");
     // Remove links
     std::regex urlRe("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+");
@@ -50,14 +32,11 @@ std::vector<std::string> TAnnotator::PreprocessText(const std::string& text, boo
     std::vector<std::string> tokens;
     Tokenizer.tokenize(processed_text, tokens);
 
-    // Leave only russian words
+    // Leave only words
     std::vector<std::string> clean_tokens;
     boost::regex xRegEx;
-    if (isRU){
-        xRegEx = boost::regex("[абвгдеёжзийклмнопрстуфхцчшщъыьэюя]+");
-    } else {
-        xRegEx = boost::regex("[a-z]+");
-    }
+    xRegEx = boost::regex("[a-z]+");
+
     for (int i = 0; i <= tokens.size() - 1; i++) {
         boost::smatch xResults;
         if(boost::regex_match(tokens[i],xResults, xRegEx)){
@@ -70,22 +49,12 @@ std::vector<std::string> TAnnotator::PreprocessText(const std::string& text, boo
     return clean_tokens;
 }
 
-torch::Dict<std::string, double> TAnnotator::AnnotateCategory(TDocument &document) const {
-    std::optional<TDbDocument> dbDoc = AnnotateLanguage(document);
-    if (!dbDoc->IsEnglish() and !dbDoc->IsRussian()){
-        torch::Dict<std::string, double> newProba;
-        newProba.insert("Art & Design", 0.0);
-        return newProba;
-    }
-
-    std::vector<std::string> cleanText;
+std::vector<double> TAnnotator::AnnotateCategory(const char *text) const {
+    const std::string string_text = text;
     // Embedding
-    if (dbDoc->IsEnglish()){
-        cleanText = PreprocessText(document.Text, false);
-    }
-    if (dbDoc->IsRussian()){
-        cleanText = PreprocessText(document.Text, true);
-    }
+    std::vector<std::string> cleanText;
+    cleanText = PreprocessText(string_text);
+
     // Prepare input for Naive Bayes
     std::vector<std::vector<std::string>> cleanTextList;
     cleanTextList.push_back(cleanText);
@@ -95,21 +64,15 @@ torch::Dict<std::string, double> TAnnotator::AnnotateCategory(TDocument &documen
 
     // NB predict
     torch::IValue outputTensor;
-    if (dbDoc->IsEnglish()){
-        outputTensor = ENNB.forward(inputs);
-    }
-    if (dbDoc->IsRussian()){
-        outputTensor = RUNB.forward(inputs);
-    }
+    outputTensor = LANG.forward(inputs);
+
     auto categoryProba = outputTensor.toList().get(0).toGenericDict();
-    torch::Dict<std::string, double> newProba;
+    std::vector<double> newProba;
 
     auto  it = categoryProba.begin();
     for (it = categoryProba.begin(); it != categoryProba.end(); it++) {
-        // Round to 2 decimals after point
         double proba = it->value().toDouble();
-        proba = std::floor((proba * 100) + .5) / 100;
-        newProba.insert(it->key().toStringRef(), proba);
+        newProba.push_back(proba);
     }
     return newProba;
 }

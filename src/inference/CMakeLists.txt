@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
-project(tgcat)
+project(tglang)
 
 add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
@@ -39,16 +39,12 @@ find_package(Protobuf REQUIRED)
 
 set(SOURCE_FILES
         src/annotator.cpp
-        src/detect.cpp
-        src/document.cpp
-        src/db_document.cpp
         src/json.cpp
         src/json-builder.cpp
-        src/nasty.cpp
 
         src/thread_pool.cpp
         src/util.cpp
-        src/tgcat.cpp
+        src/tglang.cpp
         )
 
 file(GLOB PROTO_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/proto/*.proto")
@@ -70,7 +66,7 @@ target_include_directories(OpenNMTTokenizer SYSTEM PUBLIC "${CMAKE_CURRENT_SOURC
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
 include_directories(${CMAKE_BINARY_DIR})
 
-add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${PROTO_SRCS} src/tgcat.cpp)
+add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${PROTO_SRCS} src/tglang.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${LIB_LIST})
 target_compile_options(${PROJECT_NAME} PUBLIC "${TGNEWS_CXX_FLAGS}")
 target_compile_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:Debug>:${TGNEWS_CXX_DEBUG_FLAGS}>")
