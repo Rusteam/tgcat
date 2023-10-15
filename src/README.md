@@ -12,18 +12,25 @@ cp src/inference/thirdparty/CMakeLists.txt src/inference/thirdparty/onmt/CMakeLi
 ### 1.1.2 Libtorch
 ```
 cd src/inference
-wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.7.0%2Bcpu.zip
-unzip libtorch-cxx11-abi-shared-with-deps-1.7.0+cpu.zip
+wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.1.0%2Bcpu.zip
+unzip libtorch-cxx11-abi-shared-with-deps-2.1.0+cpu.zip
 ```
 ## 1.2 Build
-### 1.2.1 Tgcat
+### 1.2.1 Tglang
 ```bash
 cd src/inference && mkdir build && cd build && Torch_DIR="../libtorch" cmake -DCMAKE_BUILD_TYPE=Release .. && make -j4
 ```
 ### 1.2.2 Tgtester
 ```
-cp src/inference/build/libtgcat.so src/tester
+cp src/inference/build/libtglang.so src/tester
 cd src/tester && mkdir build && cd build && Torch_DIR="../libtorch" cmake -DCMAKE_BUILD_TYPE=Release .. && make -j4
+cp src/tester/build/tglang-tester .
+```
+### 1.2.3 Run tester
+Put tglang.pt to /resources folder
+
+```
+./tglang-tester test.sh
 ```
 
 ## 2 Docker
