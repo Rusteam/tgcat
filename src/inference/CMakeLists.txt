@@ -19,7 +19,6 @@ set(TGNEWS_LNK_DEBUG_FLAGS "-fsanitize=address")
 set(TGNEWS_CXX_RELEASE_FLAGS "-funroll-loops;-Ofast;-march=x86-64;-mtune=generic;-msse3;-mssse3;-msse4;-msse4.1;-msse4.2")
 
 set(BUILD_TESTING 0)
-add_subdirectory(thirdparty/fasttext)
 add_subdirectory(thirdparty/eigen)
 
 set(LIB_ONLY True)
@@ -53,14 +52,12 @@ set(LIB_LIST
         ${Boost_LIBRARIES}
         ${Protobuf_LIBRARIES}
         ${TORCH_LIBRARIES}
-        fasttext-static
         OpenNMTTokenizer
         eigen
         )
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")
 
-target_include_directories(fasttext-static SYSTEM PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/fasttext/src")
 target_include_directories(OpenNMTTokenizer SYSTEM PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/onmt/include")
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})

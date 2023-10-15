@@ -69,6 +69,6 @@ int TAnnotator::AnnotateCategory(const char *text) const {
     outputTensor = LANG.forward(inputs);
 
     auto categoryProba = outputTensor.toList();
-    //TODO: convert IValue to int
-    return categoryProba[0].toInteger();
+
+    return categoryProba.get(0).toInt();
 }

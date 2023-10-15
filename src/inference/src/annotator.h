@@ -8,11 +8,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include <fasttext.h>
 #include <onmt/Tokenizer.h>
 
-
-using TFTModelStorage = std::unordered_map<tg::ELanguage, fasttext::FastText>;
 
 class TAnnotator {
 public:
