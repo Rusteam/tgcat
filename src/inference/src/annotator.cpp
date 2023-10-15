@@ -14,8 +14,7 @@
 #include "boost/algorithm/string/regex.hpp"
 
 TAnnotator::TAnnotator(
-            const std::string& langPath,
-        size_t maxChars):
+            const std::string& langPath):
         Tokenizer(onmt::Tokenizer::Mode::Conservative, onmt::Tokenizer::Flags::CaseFeature)
 {
     LANG = torch::jit::load(langPath);
@@ -51,11 +50,20 @@ std::vector<std::string> TAnnotator::PreprocessText(const std::string& text) con
     return tokens;
 }
 
-int TAnnotator::AnnotateCategory(const char *text) const {
-    const std::string string_text = text;
+int TAnnotator::AnnotateCategory(const char *text, int maxChars) const {
+    std::string string_text = text;
+    std::string cutted_text;
+    if (string_text.size() > maxChars){
+        cutted_text = string_text.substr(string_text.size() - maxChars, string_text.size());
+    }
+    else {
+        cutted_text = string_text;
+    }
+    const std::string processing_text = cutted_text;
+
     // Embedding
     std::vector<std::string> cleanText;
-    cleanText = PreprocessText(string_text);
+    cleanText = PreprocessText(processing_text);
 
     // Prepare input for Naive Bayes
     std::vector<std::vector<std::string>> cleanTextList;

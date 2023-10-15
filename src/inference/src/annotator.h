@@ -14,9 +14,8 @@
 class TAnnotator {
 public:
     TAnnotator(
-            const std::string& langPath,
-            size_t maxChars);
-    int AnnotateCategory(const char *text) const;
+            const std::string& langPath);
+    int AnnotateCategory(const char *text, int maxChars) const;
     std::vector<std::string> PreprocessText(const std::string& text) const;
 
 private:
