@@ -19,7 +19,7 @@ public:
     TAnnotator(
             const std::string& langPath,
             size_t maxChars);
-    std::vector<double> AnnotateCategory(const char *text) const;
+    int AnnotateCategory(const char *text) const;
     std::vector<std::string> PreprocessText(const std::string& text) const;
 
 private:

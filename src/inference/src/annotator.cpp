@@ -25,14 +25,15 @@ TAnnotator::TAnnotator(
 std::vector<std::string> TAnnotator::PreprocessText(const std::string& text) const {
     setlocale(LC_ALL, "rus");
     // Remove links
-    std::regex urlRe("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+");
-    std::string processed_text = std::regex_replace(text, urlRe, " ");
+    //std::regex urlRe("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+");
+    //std::string processed_text = std::regex_replace(text, urlRe, " ");
 
     // Tokenize
     std::vector<std::string> tokens;
-    Tokenizer.tokenize(processed_text, tokens);
+    Tokenizer.tokenize(text, tokens);
 
     // Leave only words
+    /*
     std::vector<std::string> clean_tokens;
     boost::regex xRegEx;
     xRegEx = boost::regex("[a-z]+");
@@ -45,11 +46,12 @@ std::vector<std::string> TAnnotator::PreprocessText(const std::string& text) con
             }
         }
     }
+    */
     //std::string clean_token_string = boost::join(clean_tokens, " ");
-    return clean_tokens;
+    return tokens;
 }
 
-std::vector<double> TAnnotator::AnnotateCategory(const char *text) const {
+int TAnnotator::AnnotateCategory(const char *text) const {
     const std::string string_text = text;
     // Embedding
     std::vector<std::string> cleanText;
@@ -66,13 +68,7 @@ std::vector<double> TAnnotator::AnnotateCategory(const char *text) const {
     torch::IValue outputTensor;
     outputTensor = LANG.forward(inputs);
 
-    auto categoryProba = outputTensor.toList().get(0).toGenericDict();
-    std::vector<double> newProba;
-
-    auto  it = categoryProba.begin();
-    for (it = categoryProba.begin(); it != categoryProba.end(); it++) {
-        double proba = it->value().toDouble();
-        newProba.push_back(proba);
-    }
-    return newProba;
+    auto categoryProba = outputTensor.toList();
+    //TODO: convert IValue to int
+    return categoryProba[0].toInteger();
 }
