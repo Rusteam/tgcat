@@ -7,7 +7,7 @@
 
 
 std::string langPath("./resources/tglang.pt");
-int maxChars = 1500;
+int maxChars = 2000;
 
 TAnnotator annotator = TAnnotator(langPath);
 

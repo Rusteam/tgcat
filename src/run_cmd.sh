@@ -1,4 +1,6 @@
 #!/bin/bash
 
-./tgcat-tester language data/external/dc0212-input.txt data/processed/dc0212-language_output.txt
-./tgcat-tester category data/external/dc0212-input.txt data/processed/dc0212-category_output.txt
+./tglang-tester /app/data/raw/thestack_v2/TGLANG_LANGUAGE_1S_ENTERPRISE/Module.bsl > /app/data/output.txt
+./tglang-tester /app/data/raw/thestack_v2/TGLANG_LANGUAGE_1S_ENTERPRISE/ManagerModule.bsl >> /app/data/output.txt
+./tglang-tester /app/data/raw/thestack_v2/TGLANG_LANGUAGE_ABAP/2.txt >> /app/data/output.txt
+./tglang-tester /app/data/raw/thestack_v2/TGLANG_LANGUAGE_ABAP/3.txt >> /app/data/output.txt

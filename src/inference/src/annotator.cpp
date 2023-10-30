@@ -22,7 +22,7 @@ TAnnotator::TAnnotator(
 
 
 std::vector<std::string> TAnnotator::PreprocessText(const std::string& text) const {
-    setlocale(LC_ALL, "rus");
+    setlocale(LC_ALL, "eng");
     // Remove links
     //std::regex urlRe("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+");
     //std::string processed_text = std::regex_replace(text, urlRe, " ");

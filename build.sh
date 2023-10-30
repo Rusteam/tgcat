@@ -1,8 +1,10 @@
 #!/bin/bash
 
-docker stop tgcat-tester
+set -e
 
-docker build -t tgcat:latest ./src
+export DOCKER_DEFAULT_PLATFORM=linux/amd64
+
+docker build -t tglang:latest ./src
 
 if [ $? -ne 0 ]
 then
@@ -10,10 +12,14 @@ then
   exit 1
 fi
 
-cp models/external/lid.176.bin resources/
-cp models/trained/tgcat/*.pt resources/
-cp src/inference/libtorch/lib/libtorch.so src/inference/libtorch/lib/libgomp-75eea7e8.so.1 src/inference/libtorch/lib/libc10.so resources/
+mkdir -p resources
+cp src/inference/libtorch/lib/libtorch.so \
+    src/inference/libtorch/lib/libtorch_cpu.so \
+    src/inference/libtorch/lib/libgomp-52f2fd74.so.1 \
+    src/inference/libtorch/lib/libc10.so resources/
 
-docker run --rm --name tgcat-tester \
+cp models/trained/tglang_l.pt resources/tglang.pt
+
+docker run --rm --name tglang-tester \
                -v $(pwd)/resources:/app/inference/resources \
-               tgcat:latest
+               tglang:latest
