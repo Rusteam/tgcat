@@ -15,7 +15,7 @@
 
 TAnnotator::TAnnotator(
             const std::string& langPath):
-        Tokenizer(onmt::Tokenizer::Mode::Conservative, onmt::Tokenizer::Flags::CaseFeature)
+        Tokenizer(onmt::Tokenizer::Mode::Space)
 {
     LANG = torch::jit::load(langPath);
 }
@@ -31,6 +31,9 @@ std::vector<std::string> TAnnotator::PreprocessText(const std::string& text) con
     std::vector<std::string> tokens;
     Tokenizer.tokenize(text, tokens);
 
+    //for (std::string i: tokens){
+    //    std::cout << i << std::endl;
+    //}
     // Leave only words
     /*
     std::vector<std::string> clean_tokens;
