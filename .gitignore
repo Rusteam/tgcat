@@ -35,3 +35,5 @@ models/
 resources/
 
 src/inference/libtorch/
+submission/
+*.zip

@@ -1,10 +1,12 @@
 build:
-	bash build.sh
-	mv resources/submission.zip src/
+	rm -rf submission/submission.zip
+	docker compose run --build tglang
 
 test:
-	bash test.sh
-	python -m unittest tests/test*.py
+	cp submission/submission.zip lib/
+	rm ./data/output.txt
+	docker compose run --build tglang-tester
+	cat ./data/output.txt
 
 predict:
 	python -m src.train.predict

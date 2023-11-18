@@ -15,21 +15,22 @@ lang_maps = dict(
     common_lisp="common_lisp",
     cplusplus="c++",
     protobuf="protocol_buffer",
-    objective_c="objective_c++",
+    objective_c="objective-c++",
     lisp="emacs_lisp",
+    csharp="c-sharp",
 
 
 )
 exclude = [
     "other", "1s_enterprise", "actionscript",
-    "apex", "csharp", "delphi", "fift",
-    "func", "hack"
+    "apex", "delphi", "fift",
+    "func", "hack", "tl"
 ]
 
 
 def download_thestack(dest_dir="./data/raw/thestack",
-                      n_samples=10):
-    lang_enums = Path(__file__).with_name("langs_enum.txt").read_text().splitlines()
+                      n_samples=10, n_skip=0):
+    lang_enums = Path(__file__).with_name("langs_enum_r2.txt").read_text().splitlines()
     dest_path = Path(__file__).parents[2] / dest_dir
     progress_bar = tqdm(lang_enums, desc="downloading languages")
 
@@ -58,9 +59,10 @@ def download_thestack(dest_dir="./data/raw/thestack",
                 streaming=True
             )
 
-            if n_exist > 0:
-                ds = ds.skip(n_exist)
-            for idx, sample in enumerate(iter(ds.take(n_samples - n_exist))):
+            if n_exist > 0 or n_skip > 0:
+                ds = ds.skip(n_exist + n_skip)
+
+            for idx, sample in enumerate(iter(ds.shuffle().take(n_samples - n_exist))):
                 dest_file = class_dir / f"{idx+n_exist}.txt"
                 dest_file.write_text(sample["content"])
 

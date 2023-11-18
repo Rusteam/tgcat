@@ -18,7 +18,8 @@ cp src/inference/libtorch/lib/libtorch.so \
     src/inference/libtorch/lib/libgomp-52f2fd74.so.1 \
     src/inference/libtorch/lib/libc10.so resources/
 
-cp models/trained/tglang_l.pt resources/tglang.pt
+cp models/trained/tglang.pt resources/tglang.pt
+cp models/trained/tglang_tokenizer.pt resources/tglang_tokenizer.pt
 
 docker run --rm --name tglang-tester \
                -v $(pwd)/resources:/app/inference/resources \

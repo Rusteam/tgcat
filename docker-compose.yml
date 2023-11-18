@@ -1,0 +1,14 @@
+services:
+  tglang:
+    build:
+      context: ./lib
+      dockerfile: Build.dockerfile
+    volumes:
+      - ./submission:/data
+    command: zip -r /data/submission.zip .
+  tglang-tester:
+    build:
+      context: ./lib
+      dockerfile: Test.dockerfile
+    volumes:
+      - ./data:/app/data
