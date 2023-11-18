@@ -1,6 +1,5 @@
 #pragma once
 
-#include "config.pb.h"
 #include <torch/script.h>
 #include <memory>
 #include <optional>

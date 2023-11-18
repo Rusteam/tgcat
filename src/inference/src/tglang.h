@@ -4,9 +4,8 @@
 /**
  * Library for determining programming or markup language of a code snippet.
  */
-
+ 
 #include <stddef.h>
-#include "annotator.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,10 +56,8 @@ enum TglangLanguage {
   TGLANG_LANGUAGE_XML
 };
 
-extern TAnnotator annotator;
-
 /**
- * Detects programming language of a code snippet.
+ * Detects programming or markup language of a code snippet.
  * \param[in] text Text of a code snippet. A null-terminated string in UTF-8 encoding.
  * \return detected programming language.
  */

@@ -38,7 +38,11 @@ find_package(Protobuf REQUIRED)
 
 set(SOURCE_FILES
         src/annotator.cpp
+        src/json.cpp
+        src/json-builder.cpp
+
         src/thread_pool.cpp
+        src/util.cpp
         src/tglang.cpp
         )
 

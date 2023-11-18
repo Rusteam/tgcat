@@ -1,7 +1,6 @@
 #include "annotator.h"
 #include "thread_pool.h"
 #include "timer.h"
-#include "util.h"
 #include <boost/algorithm/string/join.hpp>
 #include <boost/locale.hpp>
 
@@ -15,14 +14,14 @@
 
 TAnnotator::TAnnotator(
             const std::string& langPath):
-        Tokenizer(onmt::Tokenizer::Mode::Conservative, onmt::Tokenizer::Flags::CaseFeature)
+        Tokenizer(onmt::Tokenizer::Mode::Conservative)
 {
     LANG = torch::jit::load(langPath);
 }
 
 
 std::vector<std::string> TAnnotator::PreprocessText(const std::string& text) const {
-    setlocale(LC_ALL, "eng");
+    setlocale(LC_ALL, "rus");
     // Remove links
     //std::regex urlRe("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+");
     //std::string processed_text = std::regex_replace(text, urlRe, " ");

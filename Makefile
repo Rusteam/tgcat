@@ -4,7 +4,6 @@ build:
 
 test:
 	cp submission/submission.zip lib/
-	rm ./data/output.txt
 	docker compose run --build tglang-tester
 	cat ./data/output.txt
 

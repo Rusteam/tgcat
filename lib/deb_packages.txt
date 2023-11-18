@@ -1,9 +1,0 @@
-cmake
-gcc
-g++
-libboost-all-dev
-build-essential
-libjsoncpp-dev
-uuid-dev
-protobuf-compiler
-libprotobuf-dev
