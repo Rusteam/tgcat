@@ -1,21 +1,16 @@
 services:
-  tglang-v2:
-    build:
-      context: ./lib
-      dockerfile: Build.dockerfile
-    volumes:
-      - ./submission:/data
-    command: zip -r /data/submission.zip .
-  tglang-tester-v2:
-    build:
-      context: ./lib
-      dockerfile: Test.dockerfile
-    volumes:
-      - ./data:/app/data
   tglang:
     build:
       context: ./src
-      dockerfile: Dockerfile
+      dockerfile: Build.dockerfile
     volumes:
       - ./submission:/data
-    command: "cp -R /submission/* /data/"
+      - ./models/trained/tglang.pt:/submission/resources/tglang.pt
+    command: "bash -c 'cp -R /submission/* /data/'"
+  tglang-tester:
+    build:
+      context: ./src
+      dockerfile: Tester.dockerfile
+    network_mode: none
+    volumes:
+      - ./data:/app/data
