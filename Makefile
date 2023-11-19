@@ -3,7 +3,7 @@ build:
 		docker compose run --build tglang
 
 test:
-	cp -R submission/* ./src/submission/
+	rsync -avz --delete ./submission/ ./src/submission/
 	DOCKER_DEFAULT_PLATFORM=linux/amd64 \
 		docker compose run --build tglang-tester
 	cat ./data/output.txt

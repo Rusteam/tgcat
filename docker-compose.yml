@@ -11,6 +11,5 @@ services:
     build:
       context: ./src
       dockerfile: Tester.dockerfile
-    network_mode: none
     volumes:
       - ./data:/app/data
