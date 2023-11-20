@@ -12,6 +12,37 @@
 #include "boost/algorithm/string/regex.hpp"
 #include "boost/regex.hpp"
 
+#include <chrono>
+#include <time.h>
+
+template <class DT = std::chrono::milliseconds,
+          class ClockT = std::chrono::steady_clock>
+class Timer {
+  using timep_t = typename ClockT::time_point;
+  timep_t _start = ClockT::now(), _end = {};
+
+ public:
+  Timer() { tick(); }
+  ~Timer() {
+    tock();
+    printf("\nruntime: %ld ms \n", duration().count());
+  }
+
+ private:
+  void tick() {
+    _end = timep_t{};
+    _start = ClockT::now();
+  }
+
+  void tock() { _end = ClockT::now(); }
+
+  template <class T = DT>
+  auto duration() const {
+    //    gsl_Expects(_end != timep_t{} && "toc before reporting");
+    return std::chrono::duration_cast<T>(_end - _start);
+  }
+};
+
 TAnnotator::TAnnotator(const std::string& langPath)
     : Tokenizer(onmt::Tokenizer::Mode::Conservative) {
   LANG = torch::jit::load(langPath);
@@ -29,6 +60,7 @@ std::vector<std::string> TAnnotator::PreprocessText(
 }
 
 int TAnnotator::AnnotateCategory(const char* text, int maxChars) const {
+  Timer t;
   int len = strlen(text);
   std::string processing_text{&text[std::max(len - maxChars, 0)]};
 
