@@ -1,81 +1,101 @@
 #include "annotator.h"
-#include "thread_pool.h"
-#include "timer.h"
+
+#include <time.h>
+
+#include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/locale.hpp>
-
-#include <string>
+#include <chrono>
+#include <cmath>
 #include <locale>
-#include <regex>
 #include <optional>
-#include <boost/algorithm/string.hpp>
-#include "boost/regex.hpp"
+#include <regex>
+#include <string>
+
 #include "boost/algorithm/string/regex.hpp"
+#include "boost/regex.hpp"
+#include "thread_pool.h"
+#include "timer.h"
 
-TAnnotator::TAnnotator(
-            const std::string& langPath):
-        Tokenizer(onmt::Tokenizer::Mode::Conservative)
-{
-    LANG = torch::jit::load(langPath);
+template <class DT = std::chrono::milliseconds,
+          class ClockT = std::chrono::steady_clock>
+class Timer {
+  using timep_t = typename ClockT::time_point;
+  timep_t _start = ClockT::now(), _end = {};
+
+ public:
+  Timer() { tick(); }
+  ~Timer() {
+    tock();
+    printf("\nruntime: %ld ms \n", duration().count());
+  }
+
+ private:
+  void tick() {
+    _end = timep_t{};
+    _start = ClockT::now();
+  }
+
+  void tock() { _end = ClockT::now(); }
+
+  template <class T = DT>
+  auto duration() const {
+    //    gsl_Expects(_end != timep_t{} && "toc before reporting");
+    return std::chrono::duration_cast<T>(_end - _start);
+  }
+};
+
+static constexpr std::size_t ZERO_VALUE_SIZE_T = 0;
+TAnnotator::TAnnotator(const std::string& langPath)
+    : Tokenizer(onmt::Tokenizer::Mode::Conservative) {
+  LANG = torch::jit::load(langPath);
+  setlocale(LC_ALL, "rus");
+  _listCleanTokensVec.push_back({});
+  _inputsFlow.push_back({});
 }
 
+void TAnnotator::PreprocessText(const std::string& text) {
+  // Remove links
+  // std::regex
+  // urlRe("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+");
+  // std::string processed_text = std::regex_replace(text, urlRe, " ");
 
-std::vector<std::string> TAnnotator::PreprocessText(const std::string& text) const {
-    setlocale(LC_ALL, "rus");
-    // Remove links
-    //std::regex urlRe("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+");
-    //std::string processed_text = std::regex_replace(text, urlRe, " ");
+  // Tokenize
+  std::vector<std::string>& vec = _listCleanTokensVec[0];
+  Tokenizer.tokenize(text, vec);
 
-    // Tokenize
-    std::vector<std::string> tokens;
-    Tokenizer.tokenize(text, tokens);
+  // Leave only words
+  /*
+  std::vector<std::string> clean_tokens;
+  boost::regex xRegEx;
+  xRegEx = boost::regex("[a-z]+");
 
-    // Leave only words
-    /*
-    std::vector<std::string> clean_tokens;
-    boost::regex xRegEx;
-    xRegEx = boost::regex("[a-z]+");
-
-    for (int i = 0; i <= tokens.size() - 1; i++) {
-        boost::smatch xResults;
-        if(boost::regex_match(tokens[i],xResults, xRegEx)){
-            if (tokens[i].size() > 1){
-                clean_tokens.push_back(tokens[i]);
-            }
-        }
-    }
-    */
-    //std::string clean_token_string = boost::join(clean_tokens, " ");
-    return tokens;
+  for (int i = 0; i <= tokens.size() - 1; i++) {
+      boost::smatch xResults;
+      if(boost::regex_match(tokens[i],xResults, xRegEx)){
+          if (tokens[i].size() > 1){
+              clean_tokens.push_back(tokens[i]);
+          }
+      }
+  }
+  */
+  // std::string clean_token_string = boost::join(clean_tokens, " ");
 }
 
-int TAnnotator::AnnotateCategory(const char *text, int maxChars) const {
-    std::string string_text = text;
-    std::string cutted_text;
-    if (string_text.size() > maxChars){
-        cutted_text = string_text.substr(string_text.size() - maxChars, string_text.size());
-    }
-    else {
-        cutted_text = string_text;
-    }
-    const std::string processing_text = cutted_text;
+int TAnnotator::AnnotateCategory(const char* text, std::size_t maxChars) {
+  Timer t;
+  auto const len = strlen(text);
+  processing_text = &text[std::max(len - maxChars, ZERO_VALUE_SIZE_T)];
 
-    // Embedding
-    std::vector<std::string> cleanText;
-    cleanText = PreprocessText(processing_text);
+  // Embedding
+  PreprocessText(processing_text);
 
-    // Prepare input for Naive Bayes
-    std::vector<std::vector<std::string>> cleanTextList;
-    cleanTextList.push_back(cleanText);
+  // Prepare input for Naive Bayes
+  _inputsFlow[0] = _listCleanTokensVec;
 
-    std::vector<torch::jit::IValue> inputs;
-    inputs.emplace_back(cleanTextList);
+  // NB predict
 
-    // NB predict
-    torch::IValue outputTensor;
-    outputTensor = LANG.forward(inputs);
+  auto const categoryProba = LANG.forward(_inputsFlow).toList();
 
-    auto categoryProba = outputTensor.toList();
-
-    return categoryProba.get(0).toInt();
+  return categoryProba.get(0).toInt();
 }
