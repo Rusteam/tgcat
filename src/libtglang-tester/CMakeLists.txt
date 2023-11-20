@@ -15,3 +15,5 @@ if (NOT WIN32)
 else()
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
+
+target_compile_options(tglang-tester PRIVATE -g)
