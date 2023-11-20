@@ -12,22 +12,19 @@
 #include <regex>
 #include <string>
 
-#include "boost/algorithm/string/regex.hpp"
-#include "boost/regex.hpp"
 #include "thread_pool.h"
 #include "timer.h"
+
+//#define MEAUSRE_TIME
 
 template <class DT = std::chrono::milliseconds,
           class ClockT = std::chrono::steady_clock>
 class Timer {
-  using timep_t = typename ClockT::time_point;
-  timep_t _start = ClockT::now(), _end = {};
-
  public:
-  Timer() { tick(); }
+  Timer(std::string const& name) : _name(name) { tick(); }
   ~Timer() {
     tock();
-    printf("\nruntime: %ld ms \n", duration().count());
+    printf("runtime[%s]: %ld ms \n", _name.c_str(), duration().count());
   }
 
  private:
@@ -43,6 +40,12 @@ class Timer {
     //    gsl_Expects(_end != timep_t{} && "toc before reporting");
     return std::chrono::duration_cast<T>(_end - _start);
   }
+
+ private:
+  using timep_t = typename ClockT::time_point;
+  timep_t _start = ClockT::now(), _end = {};
+
+  std::string const _name;
 };
 
 static constexpr std::size_t ZERO_VALUE_SIZE_T = 0;
@@ -83,7 +86,9 @@ void TAnnotator::PreprocessText(const std::string& text) {
 }
 
 int TAnnotator::AnnotateCategory(const char* text, std::size_t maxChars) {
-  Timer t;
+#ifdef MEAUSRE_TIME
+  Timer t("AnnotateCategory");
+#endif
   auto const len = strlen(text);
   processing_text = &text[std::max(len - maxChars, ZERO_VALUE_SIZE_T)];
 
