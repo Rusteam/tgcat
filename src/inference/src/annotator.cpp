@@ -1,8 +1,12 @@
 #include "annotator.h"
 
+#include <time.h>
+
+
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/locale.hpp>
+#include <chrono>
 #include <cmath>
 #include <locale>
 #include <optional>
@@ -12,20 +16,16 @@
 #include "boost/algorithm/string/regex.hpp"
 #include "boost/regex.hpp"
 
-#include <chrono>
-#include <time.h>
+//#define MEAUSRE_TIME
 
 template <class DT = std::chrono::milliseconds,
           class ClockT = std::chrono::steady_clock>
 class Timer {
-  using timep_t = typename ClockT::time_point;
-  timep_t _start = ClockT::now(), _end = {};
-
  public:
-  Timer() { tick(); }
+  Timer(std::string const& name) : _name(name) { tick(); }
   ~Timer() {
     tock();
-    printf("\nruntime: %ld ms \n", duration().count());
+    printf("runtime[%s]: %ld ms \n", _name.c_str(), duration().count());
   }
 
  private:
@@ -41,40 +41,67 @@ class Timer {
     //    gsl_Expects(_end != timep_t{} && "toc before reporting");
     return std::chrono::duration_cast<T>(_end - _start);
   }
+
+ private:
+  using timep_t = typename ClockT::time_point;
+  timep_t _start = ClockT::now(), _end = {};
+
+  std::string const _name;
 };
 
+static constexpr std::size_t ZERO_VALUE_SIZE_T = 0;
 TAnnotator::TAnnotator(const std::string& langPath)
     : Tokenizer(onmt::Tokenizer::Mode::Conservative) {
   LANG = torch::jit::load(langPath);
   setlocale(LC_ALL, "rus");
+  _listCleanTokensVec.push_back({});
+  _inputsFlow.push_back({});
 }
 
-std::vector<std::string> TAnnotator::PreprocessText(
-    const std::string& text) const {
+void TAnnotator::PreprocessText(const std::string& text) {
+  // Remove links
+  // std::regex
+  // urlRe("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+");
+  // std::string processed_text = std::regex_replace(text, urlRe, " ");
 
   // Tokenize
-  std::vector<std::string> tokens;
-  Tokenizer.tokenize(text, tokens);
+  std::vector<std::string>& vec = _listCleanTokensVec[0];
+  Tokenizer.tokenize(text, vec);
 
- return tokens;
+  // Leave only words
+  /*
+  std::vector<std::string> clean_tokens;
+  boost::regex xRegEx;
+  xRegEx = boost::regex("[a-z]+");
+
+  for (int i = 0; i <= tokens.size() - 1; i++) {
+      boost::smatch xResults;
+      if(boost::regex_match(tokens[i],xResults, xRegEx)){
+          if (tokens[i].size() > 1){
+              clean_tokens.push_back(tokens[i]);
+          }
+      }
+  }
+  */
+  // std::string clean_token_string = boost::join(clean_tokens, " ");
 }
 
-int TAnnotator::AnnotateCategory(const char* text, int maxChars) const {
-  Timer t;
-  int len = strlen(text);
-  std::string processing_text{&text[std::max(len - maxChars, 0)]};
+int TAnnotator::AnnotateCategory(const char* text, std::size_t maxChars) {
+#ifdef MEAUSRE_TIME
+  Timer t("AnnotateCategory");
+#endif
+  auto const len = strlen(text);
+  processing_text = &text[std::max(len - maxChars, ZERO_VALUE_SIZE_T)];
 
   // Embedding
-  std::vector<std::string> cleanText{PreprocessText(processing_text)};
+  PreprocessText(processing_text);
 
   // Prepare input for Naive Bayes
-  std::vector<std::vector<std::string>> cleanTextList(1, cleanText);
-  std::vector<torch::jit::IValue> inputs(1, cleanTextList);
+  _inputsFlow[0] = _listCleanTokensVec;
 
   // NB predict
-  torch::IValue outputTensor{LANG.forward(inputs)};
 
-  auto categoryProba = outputTensor.toList();
+  auto const categoryProba = LANG.forward(_inputsFlow).toList();
 
   return categoryProba.get(0).toInt();
 }
