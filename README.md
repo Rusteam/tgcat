@@ -112,18 +112,34 @@ vectorizer output.
 
 ### Export
 
-The final model is exported as a C++ header file.
+The final model (tfidf+nb) is exported to 
+[TorchScript](https://pytorch.org/docs/stable/jit.html) 
+and to json with vocabulary and weights.
 
-## C++ shared library
+## C++ inference
 
-### Generate C++ Code
+### Option 1. ONMT + TorchScript
+
+This option matches python predictions, however it's very slow (600ms/file).
+
+1. Run `make build` to build the `libtglang.so` lib with _docker_.
+2. Run `make test` to run a clean test of the library 
+on a bunch of test files and evaluate the accuracy score.
+3. Run `make submit` to create a final `submission.zip` file.
+
+### Option 2. C++ shared library from json
+
+This runs much faster (under 10ms/file) but the predictions are slightly different
+from python.
+
+#### Generate C++ Code
 
 To generate the `vectorizer_gen.inc` and `data_gen.inc` files, 
 you'll need to install [Deno](https://deno.com/).
 Once installed, navigate to the `src/scripts/` folder and
 run `generate.sh`.
 
-### libtglang.so Library
+#### libtglang.so Library
 
 The `libtglang.so` library can be built using `g++`. 
 To do this, open the `src/` folder and run `compile.sh`.

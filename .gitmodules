@@ -1,12 +1,3 @@
-[submodule "src/inference/thirdparty"]
-	path = src/inference/thirdparty
-	url = https://github.com/facebookresearch/fastText/
-[submodule "src/inference/thirdparty/eigen"]
-	path = src/inference/thirdparty/eigen
-	url = https://github.com/eigenteam/eigen-git-mirror
-[submodule "src/inference/thirdparty/fasttext"]
-	path = src/inference/thirdparty/fasttext
-	url = https://github.com/facebookresearch/fastText/
 [submodule "src/inference/thirdparty/onmt"]
 	path = src/inference/thirdparty/onmt
 	url = https://github.com/IlyaGusev/Tokenizer

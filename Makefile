@@ -1,16 +1,15 @@
 build:
+	@echo "Build libtglang.so lib"
 	DOCKER_DEFAULT_PLATFORM=linux/amd64 \
 		docker compose run --build tglang
 
 test:
+	@echo "Run clean test"
 	rsync -avz --delete ./submission/ ./src/submission/
 	DOCKER_DEFAULT_PLATFORM=linux/amd64 \
 		docker compose run --build tglang-tester
 	tail ./data/output.txt
-	python src/eval.py
-
-predict:
-	python -m src.train.predict
+	python src/tglang/eval_cpp.py
 
 submit:
 	@echo "Create a final submission"

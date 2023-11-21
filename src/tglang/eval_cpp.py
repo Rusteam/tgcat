@@ -5,10 +5,10 @@ from pathlib import Path
 
 
 def main():
-    lang_enum = (Path(__file__).parent / "tglang" / "langs_enum_r2.txt").read_text().strip().split("\n")
+    lang_enum = Path(__file__).with_name("langs_enum_r2.txt").read_text().strip().split("\n")
     lang_enum = [l.strip() for l in lang_enum if bool(l)]
 
-    output_file = Path(__file__).parent.parent / "data" / "output.txt"
+    output_file = Path(__file__).parents[2] / "data" / "output.txt"
     output = output_file.read_text().strip().split("\n")
 
     correct = 0

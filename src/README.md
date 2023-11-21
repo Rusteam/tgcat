@@ -2,10 +2,7 @@
 ## 1.1 Prerequisites
 ### 1.1.1 Submodules
 ```bash
-git submodule add https://github.com/facebookresearch/fastText/ src/inference/thirdparty/fasttext
 git submodule add https://github.com/IlyaGusev/Tokenizer src/inference/thirdparty/onmt
-git submodule add https://github.com/eigenteam/eigen-git-mirror src/inference/thirdparty/eigen
-
 git submodule update --init --recursive
 cp src/inference/thirdparty/CMakeLists.txt src/inference/thirdparty/onmt/CMakeLists.txt 
 ```
